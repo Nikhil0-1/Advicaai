@@ -2,8 +2,9 @@
   "rules": {
     "users": {
       "patients": {
+        ".read": "auth != null",
         "$uid": {
-          ".read": "auth != null && auth.uid == $uid",
+          ".read": "auth != null",
           ".write": "auth != null && auth.uid == $uid"
         }
       },
@@ -15,8 +16,9 @@
         }
       },
       "admin": {
+        ".read": "auth != null",
         "$uid": {
-          ".read": "auth != null && auth.uid == $uid",
+          ".read": "auth != null",
           ".write": "false"
         }
       }
