@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital - Admin Panel</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div id="auth-container" class="panel-container">
+        <div class="card auth-card">
+            <h1>Admin Gateway</h1>
+            <p>Access restricted to hospital administrators</p>
+            <form id="login-form">
+                <div class="input-group">
+                    <label>Admin ID</label>
+                    <input type="email" id="email" required placeholder="admin@hospital.com">
+                </div>
+                <div class="input-group">
+                    <label>Master Key</label>
+                    <input type="password" id="password" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn btn-dark">Login to Dashboard</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="main-panel" class="panel-container hidden">
+        <header class="panel-header admin-header">
+            <div class="admin-brand">
+                <h1>Hospital Management</h1>
+                <span class="badge badge-dark">ADMIN</span>
+            </div>
+            <button id="logout-btn" class="btn btn-outline">Exit</button>
+        </header>
+
+        <main class="content">
+            <div class="admin-stats">
+                <div class="stat-card card">
+                    <label>Total Consultations</label>
+                    <h2 id="stat-total">0</h2>
+                </div>
+                <div class="stat-card card">
+                    <label>Active Sessions</label>
+                    <h2 id="stat-active" class="color-primary">0</h2>
+                </div>
+                <div class="stat-card card">
+                    <label>Emergency Cases</label>
+                    <h2 id="stat-emergency" class="color-danger">0</h2>
+                </div>
+                <div class="stat-card card">
+                    <label>Doctors Online</label>
+                    <h2 id="stat-online" class="color-success">0</h2>
+                </div>
+            </div>
+
+            <section class="admin-section">
+                <div class="section-header">
+                    <h3>Doctor Management</h3>
+                    <button id="add-doctor-btn" class="btn btn-primary btn-sm">+ Add Doctor</button>
+                </div>
+
+                <div class="card table-card">
+                    <table id="doctor-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Status</th>
+                                <th>Approval</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="doctor-list">
+                            <!-- JS populated -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="admin-section">
+                <h3>Live Monitoring</h3>
+                <div class="card table-card">
+                    <table id="session-table">
+                        <thead>
+                            <tr>
+                                <th>Session ID</th>
+                                <th>Patient</th>
+                                <th>Doctor</th>
+                                <th>Duration</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="session-list">
+                            <!-- JS populated -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Add Doctor Modal -->
+    <div id="doctor-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Add New Doctor</h2>
+            <form id="add-doctor-form">
+                <div class="input-group">
+                    <label>Full Name</label>
+                    <input type="text" id="doc-name" required>
+                </div>
+                <div class="input-group">
+                    <label>Email</label>
+                    <input type="email" id="doc-email" required>
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="doc-password" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="close-modal" class="btn btn-outline">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Register Doctor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="../scripts/admin.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital - Patient Panel</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div id="auth-container" class="panel-container">
+        <div class="card auth-card">
+            <h1>Patient Login</h1>
+            <p>Access your healthcare panel</p>
+            <form id="login-form">
+                <div class="input-group">
+                    <label for="email">Email / Patient ID</label>
+                    <input type="email" id="email" required placeholder="patient@hospital.com">
+                </div>
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn btn-primary">Sign In</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="main-panel" class="panel-container hidden">
+        <header class="panel-header">
+            <div class="user-info">
+                <span class="avatar">P</span>
+                <div>
+                    <h2 id="patient-name">Loading...</h2>
+                    <span id="patient-id" class="badge">ID: --</span>
+                </div>
+            </div>
+            <button id="logout-btn" class="btn btn-outline">Logout</button>
+        </header>
+
+        <main class="content">
+            <div id="info-section">
+                <div class="card info-card">
+                    <h3>Personal Information</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Age</label>
+                            <span id="p-age">--</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Blood Group</label>
+                            <span id="p-blood">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="action-section" class="centered">
+                <button id="consult-btn" class="btn btn-primary btn-large">
+                    <span class="icon">⚕️</span> Consult Doctor
+                </button>
+            </div>
+
+            <div id="consultation-area" class="hidden">
+                <div class="consultation-header">
+                    <h3>Live Consultation</h3>
+                    <div>
+                        <span id="doctor-name" class="status-indicator">Assigning...</span>
+                        <button onclick="window.flagEmergency()" class="btn btn-danger btn-sm">🚨 Emergency</button>
+                    </div>
+                </div>
+
+                <div class="live-grid">
+                    <!-- Video Section -->
+                    <div class="video-container card">
+                        <div class="video-placeholder">
+                            <img src="https://img.icons8.com/ios-filled/100/hospital.png" alt="Hospital Icon">
+                            <p>Video Feed Ready</p>
+                        </div>
+                    </div>
+
+                    <!-- Health Data Section -->
+                    <div class="health-data card">
+                        <h4>Real-time Vitals</h4>
+                        <form id="health-form">
+                            <div class="vital-inputs">
+                                <div class="input-group">
+                                    <label>BP (mmHg)</label>
+                                    <input type="text" id="bp" placeholder="120/80">
+                                </div>
+                                <div class="input-group">
+                                    <label>Temp (°F)</label>
+                                    <input type="number" id="temp" step="0.1" placeholder="98.6">
+                                </div>
+                                <div class="input-group">
+                                    <label>Sugar (mg/dL)</label>
+                                    <input type="number" id="sugar" placeholder="100">
+                                </div>
+                                <div class="input-group">
+                                    <label>SpO2 (%)</label>
+                                    <input type="number" id="spo2" placeholder="98">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-accent">Update Vitals</button>
+                        </form>
+                    </div>
+
+                    <!-- Chat Section -->
+                    <div class="chat-container card">
+                        <div id="chat-messages" class="chat-box"></div>
+                        <div class="chat-input-area">
+                            <input type="text" id="chat-input" placeholder="Type a message...">
+                            <button id="send-btn" class="btn btn-primary">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="../scripts/patient.js"></script>
+</body>
+
+</html>

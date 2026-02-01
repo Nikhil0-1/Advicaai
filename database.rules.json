@@ -1,0 +1,40 @@
+{
+  "rules": {
+    "users": {
+      "patients": {
+        "$uid": {
+          ".read": "auth != null && auth.uid == $uid",
+          ".write": "auth != null && auth.uid == $uid"
+        }
+      },
+      "doctors": {
+        "$uid": {
+          ".read": "auth != null",
+          ".write": "auth != null && (root.child('users/admin').child(auth.uid).exists() || auth.uid == $uid)"
+        }
+      },
+      "admin": {
+        "$uid": {
+          ".read": "auth != null && auth.uid == $uid",
+          ".write": "false" 
+        }
+      }
+    },
+    "doctorStatus": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    },
+    "sessions": {
+      "$sessionID": {
+        ".read": "auth != null && (data.child('patientId').val() == auth.uid || data.child('doctorId').val() == auth.uid || root.child('users/admin').child(auth.uid).exists())",
+        ".write": "auth != null",
+        "chat": {
+           ".read": "auth != null && (root.child('sessions').child($sessionID).child('patientId').val() == auth.uid || root.child('sessions').child($sessionID).child('doctorId').val() == auth.uid)",
+           ".write": "auth != null"
+        }
+      }
+    }
+  }
+}
