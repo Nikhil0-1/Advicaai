@@ -7,25 +7,36 @@ import { ref, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-dat
  * Returns: { role: 'patient'|'doctor'|'admin'|null, data: object|null }
  */
 async function getUserRoleAndData(uid) {
-    // Check patients
-    const patientSnap = await get(ref(db, `users/patients/${uid}`));
-    if (patientSnap.exists()) {
-        return { role: 'patient', data: patientSnap.val() };
-    }
+    console.log('Checking role for UID:', uid);
 
-    // Check doctors
-    const doctorSnap = await get(ref(db, `users/doctors/${uid}`));
-    if (doctorSnap.exists()) {
-        return { role: 'doctor', data: doctorSnap.val() };
-    }
+    try {
+        // Check patients
+        const patientSnap = await get(ref(db, `users/patients/${uid}`));
+        console.log('Patient check:', patientSnap.exists());
+        if (patientSnap.exists()) {
+            return { role: 'patient', data: patientSnap.val() };
+        }
 
-    // Check admin
-    const adminSnap = await get(ref(db, `users/admin/${uid}`));
-    if (adminSnap.exists()) {
-        return { role: 'admin', data: adminSnap.val() };
-    }
+        // Check doctors
+        const doctorSnap = await get(ref(db, `users/doctors/${uid}`));
+        console.log('Doctor check:', doctorSnap.exists());
+        if (doctorSnap.exists()) {
+            return { role: 'doctor', data: doctorSnap.val() };
+        }
 
-    return { role: null, data: null };
+        // Check admin
+        const adminSnap = await get(ref(db, `users/admin/${uid}`));
+        console.log('Admin check:', adminSnap.exists());
+        if (adminSnap.exists()) {
+            return { role: 'admin', data: adminSnap.val() };
+        }
+
+        console.log('No role found for user');
+        return { role: null, data: null };
+    } catch (error) {
+        console.error('Error checking user role:', error);
+        throw error;
+    }
 }
 
 /**
