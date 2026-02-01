@@ -1,6 +1,6 @@
 import { db, auth, storage } from './firebase.js';
 import { checkAuth, login, logout } from './auth.js';
-import { ref, set, onValue, update, get, onDisconnect } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { ref, set, push, onValue, update, get, onDisconnect } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { uploadString, ref as sRef } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 // Initialize Auth Check

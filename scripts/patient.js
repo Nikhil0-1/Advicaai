@@ -1,6 +1,7 @@
 import { db, auth } from './firebase.js';
 import { checkAuth, login, logout } from './auth.js';
 import { ref, set, onValue, update, get, push, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 // Initialize Auth Check
 checkAuth('patient');
@@ -12,6 +13,7 @@ let failSafeTimer = null;
 
 // DOM Elements
 const loginForm = document.getElementById('login-form');
+const registerForm = document.getElementById('register-form');
 const logoutBtn = document.getElementById('logout-btn');
 const consultBtn = document.getElementById('consult-btn');
 const consultationArea = document.getElementById('consultation-area');
@@ -22,15 +24,49 @@ const chatInput = document.getElementById('chat-input');
 const sendBtn = document.getElementById('send-btn');
 const healthForm = document.getElementById('health-form');
 
-// Event Listeners
+// Login Handler
 loginForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email = e.target.email.value;
-    const password = e.target.password.value;
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
     try {
         await login(email, password, 'patient');
     } catch (error) {
         alert("Login failed: " + error.message);
+    }
+});
+
+// Registration Handler
+registerForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('reg-name').value;
+    const email = document.getElementById('reg-email').value;
+    const password = document.getElementById('reg-password').value;
+    const age = document.getElementById('reg-age').value;
+    const bloodGroup = document.getElementById('reg-blood').value;
+
+    try {
+        // Create user in Firebase Auth
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // Update display name
+        await updateProfile(user, { displayName: name });
+
+        // Save patient data to database
+        await set(ref(db, `users/patients/${user.uid}`), {
+            name,
+            email,
+            age: parseInt(age),
+            bloodGroup,
+            role: 'patient',
+            createdAt: Date.now()
+        });
+
+        alert("Registration successful! Logging you in...");
+        // Auth state change will handle the rest
+    } catch (error) {
+        alert("Registration failed: " + error.message);
     }
 });
 
@@ -63,11 +99,12 @@ consultBtn?.addEventListener('click', async () => {
         } else {
             alert("No doctors available right now. Please try again in a few minutes.");
             consultBtn.disabled = false;
-            consultBtn.innerText = "Consult Doctor";
+            consultBtn.innerText = "⚕️ Consult Doctor";
         }
     } catch (error) {
         alert("Error finding doctor: " + error.message);
         consultBtn.disabled = false;
+        consultBtn.innerText = "⚕️ Consult Doctor";
     }
 });
 
@@ -113,7 +150,7 @@ window.flagEmergency = flagEmergency;
 function showConsultation(docName) {
     actionSection.classList.add('hidden');
     consultationArea.classList.remove('hidden');
-    doctorNameEl.innerText = `Connected: ${docName}`;
+    doctorNameEl.innerText = `Dr. ${docName}`;
 
     // Monitor Chat
     onValue(ref(db, `sessions/${currentSessionId}/chat`), (snap) => {
@@ -188,7 +225,7 @@ async function handleDoctorDisconnection(oldDocId) {
             activeSessionId: currentSessionId
         });
 
-        doctorNameEl.innerText = `Reassigned: ${newDocData.name}`;
+        doctorNameEl.innerText = `Dr. ${newDocData.name} (Reassigned)`;
         startFailSafeWatcher(newDocId);
         alert("Your doctor disconnected. We have assigned a new doctor to continue your session.");
     } else {
@@ -212,7 +249,7 @@ healthForm?.addEventListener('submit', async (e) => {
     };
 
     await update(ref(db, `sessions/${currentSessionId}/healthData`), healthData);
-    alert("Vitals updated successfully.");
+    alert("Vitals submitted successfully!");
 });
 
 // Chat Logic

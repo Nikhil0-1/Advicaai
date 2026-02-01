@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hospital - Admin Panel</title>
+    <title>ADVICA - Admin Panel</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
@@ -16,14 +16,14 @@
             <p>Access restricted to hospital administrators</p>
             <form id="login-form">
                 <div class="input-group">
-                    <label>Admin ID</label>
+                    <label>Admin Email</label>
                     <input type="email" id="email" required placeholder="admin@hospital.com">
                 </div>
                 <div class="input-group">
                     <label>Master Key</label>
                     <input type="password" id="password" required placeholder="••••••••">
                 </div>
-                <button type="submit" class="btn btn-dark">Login to Dashboard</button>
+                <button type="submit" class="btn btn-dark" style="width:100%">Login to Dashboard</button>
             </form>
         </div>
     </div>
@@ -31,7 +31,7 @@
     <div id="main-panel" class="panel-container hidden">
         <header class="panel-header admin-header">
             <div class="admin-brand">
-                <h1>Hospital Management</h1>
+                <h1>ADVICA Admin</h1>
                 <span class="badge badge-dark">ADMIN</span>
             </div>
             <button id="logout-btn" class="btn btn-outline">Exit</button>
@@ -40,15 +40,15 @@
         <main class="content">
             <div class="admin-stats">
                 <div class="stat-card card">
-                    <label>Total Consultations</label>
+                    <label>Total Sessions</label>
                     <h2 id="stat-total">0</h2>
                 </div>
                 <div class="stat-card card">
-                    <label>Active Sessions</label>
+                    <label>Active Now</label>
                     <h2 id="stat-active" class="color-primary">0</h2>
                 </div>
                 <div class="stat-card card">
-                    <label>Emergency Cases</label>
+                    <label>Emergencies</label>
                     <h2 id="stat-emergency" class="color-danger">0</h2>
                 </div>
                 <div class="stat-card card">
@@ -67,7 +67,7 @@
                     <table id="doctor-table">
                         <thead>
                             <tr>
-                                <th>Name</th>
+                                <th>Doctor</th>
                                 <th>Email</th>
                                 <th>Status</th>
                                 <th>Approval</th>
@@ -82,7 +82,7 @@
             </section>
 
             <section class="admin-section">
-                <h3>Live Monitoring</h3>
+                <h3>Live Session Monitoring</h3>
                 <div class="card table-card">
                     <table id="session-table">
                         <thead>
@@ -106,19 +106,23 @@
     <!-- Add Doctor Modal -->
     <div id="doctor-modal" class="modal hidden">
         <div class="modal-content">
-            <h2>Add New Doctor</h2>
+            <h2>Register New Doctor</h2>
             <form id="add-doctor-form">
                 <div class="input-group">
                     <label>Full Name</label>
-                    <input type="text" id="doc-name" required>
+                    <input type="text" id="doc-name" required placeholder="Dr. John Smith">
+                </div>
+                <div class="input-group">
+                    <label>Specialty</label>
+                    <input type="text" id="doc-specialty" placeholder="General Physician">
                 </div>
                 <div class="input-group">
                     <label>Email</label>
-                    <input type="email" id="doc-email" required>
+                    <input type="email" id="doc-email" required placeholder="doctor@hospital.com">
                 </div>
                 <div class="input-group">
                     <label>Password</label>
-                    <input type="password" id="doc-password" required>
+                    <input type="password" id="doc-password" required placeholder="Min 6 characters" minlength="6">
                 </div>
                 <div class="modal-actions">
                     <button type="button" id="close-modal" class="btn btn-outline">Cancel</button>

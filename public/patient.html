@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hospital - Patient Panel</title>
+    <title>ADVICA - Patient Panel</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
@@ -12,18 +12,59 @@
 <body>
     <div id="auth-container" class="panel-container">
         <div class="card auth-card">
-            <h1>Patient Login</h1>
-            <p>Access your healthcare panel</p>
-            <form id="login-form">
+            <h1>Patient Portal</h1>
+            <p>Access your healthcare dashboard</p>
+
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="showTab('login')">Sign In</button>
+                <button class="auth-tab" onclick="showTab('register')">Register</button>
+            </div>
+
+            <form id="login-form" class="auth-form active">
                 <div class="input-group">
-                    <label for="email">Email / Patient ID</label>
-                    <input type="email" id="email" required placeholder="patient@hospital.com">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" name="email" required placeholder="patient@email.com">
                 </div>
                 <div class="input-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" required placeholder="••••••••">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" name="password" required placeholder="••••••••">
                 </div>
-                <button type="submit" class="btn btn-primary">Sign In</button>
+                <button type="submit" class="btn btn-primary" style="width:100%">Sign In</button>
+            </form>
+
+            <form id="register-form" class="auth-form">
+                <div class="input-group">
+                    <label for="reg-name">Full Name</label>
+                    <input type="text" id="reg-name" required placeholder="Your full name">
+                </div>
+                <div class="input-group">
+                    <label for="reg-email">Email</label>
+                    <input type="email" id="reg-email" required placeholder="patient@email.com">
+                </div>
+                <div class="input-group">
+                    <label for="reg-password">Password</label>
+                    <input type="password" id="reg-password" required placeholder="Min 6 characters" minlength="6">
+                </div>
+                <div class="input-group">
+                    <label for="reg-age">Age</label>
+                    <input type="number" id="reg-age" required placeholder="25" min="1" max="120">
+                </div>
+                <div class="input-group">
+                    <label for="reg-blood">Blood Group</label>
+                    <select id="reg-blood" required
+                        style="width:100%;padding:0.875rem 1rem;border:2px solid #e2e8f0;border-radius:10px;font-size:1rem;">
+                        <option value="">Select Blood Group</option>
+                        <option value="A+">A+</option>
+                        <option value="A-">A-</option>
+                        <option value="B+">B+</option>
+                        <option value="B-">B-</option>
+                        <option value="AB+">AB+</option>
+                        <option value="AB-">AB-</option>
+                        <option value="O+">O+</option>
+                        <option value="O-">O-</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-accent" style="width:100%">Create Account</button>
             </form>
         </div>
     </div>
@@ -66,8 +107,8 @@
             <div id="consultation-area" class="hidden">
                 <div class="consultation-header">
                     <h3>Live Consultation</h3>
-                    <div>
-                        <span id="doctor-name" class="status-indicator">Assigning...</span>
+                    <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+                        <span id="doctor-name" class="status-indicator status-active">Assigning...</span>
                         <button onclick="window.flagEmergency()" class="btn btn-danger btn-sm">🚨 Emergency</button>
                     </div>
                 </div>
@@ -76,14 +117,24 @@
                     <!-- Video Section -->
                     <div class="video-container card">
                         <div class="video-placeholder">
-                            <img src="https://img.icons8.com/ios-filled/100/hospital.png" alt="Hospital Icon">
-                            <p>Video Feed Ready</p>
+                            <img src="https://img.icons8.com/ios-filled/100/ffffff/video-call.png" alt="Video">
+                            <p>Video Call Ready</p>
+                        </div>
+                    </div>
+
+                    <!-- Chat Section -->
+                    <div class="chat-container card">
+                        <h4 style="margin-bottom:0.75rem;">Chat with Doctor</h4>
+                        <div id="chat-messages" class="chat-box"></div>
+                        <div class="chat-input-area">
+                            <input type="text" id="chat-input" placeholder="Type a message...">
+                            <button id="send-btn" class="btn btn-primary">Send</button>
                         </div>
                     </div>
 
                     <!-- Health Data Section -->
                     <div class="health-data card">
-                        <h4>Real-time Vitals</h4>
+                        <h4 style="margin-bottom:0.75rem;">Submit Vitals</h4>
                         <form id="health-form">
                             <div class="vital-inputs">
                                 <div class="input-group">
@@ -103,23 +154,29 @@
                                     <input type="number" id="spo2" placeholder="98">
                                 </div>
                             </div>
-                            <button type="submit" class="btn btn-accent">Update Vitals</button>
+                            <button type="submit" class="btn btn-accent" style="width:100%">Update Vitals</button>
                         </form>
-                    </div>
-
-                    <!-- Chat Section -->
-                    <div class="chat-container card">
-                        <div id="chat-messages" class="chat-box"></div>
-                        <div class="chat-input-area">
-                            <input type="text" id="chat-input" placeholder="Type a message...">
-                            <button id="send-btn" class="btn btn-primary">Send</button>
-                        </div>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
+    <script>
+        // Tab switching logic
+        function showTab(tab) {
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+
+            if (tab === 'login') {
+                document.querySelector('.auth-tab:first-child').classList.add('active');
+                document.getElementById('login-form').classList.add('active');
+            } else {
+                document.querySelector('.auth-tab:last-child').classList.add('active');
+                document.getElementById('register-form').classList.add('active');
+            }
+        }
+    </script>
     <script type="module" src="../scripts/patient.js"></script>
 </body>
 

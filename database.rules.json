@@ -8,6 +8,7 @@
         }
       },
       "doctors": {
+        ".read": "auth != null",
         "$uid": {
           ".read": "auth != null",
           ".write": "auth != null && (root.child('users/admin').child(auth.uid).exists() || auth.uid == $uid)"
@@ -16,7 +17,7 @@
       "admin": {
         "$uid": {
           ".read": "auth != null && auth.uid == $uid",
-          ".write": "false" 
+          ".write": "false"
         }
       }
     },
@@ -27,12 +28,21 @@
       }
     },
     "sessions": {
+      ".read": "auth != null && root.child('users/admin').child(auth.uid).exists()",
       "$sessionID": {
         ".read": "auth != null && (data.child('patientId').val() == auth.uid || data.child('doctorId').val() == auth.uid || root.child('users/admin').child(auth.uid).exists())",
-        ".write": "auth != null",
+        ".write": "auth != null && (data.child('patientId').val() == auth.uid || data.child('doctorId').val() == auth.uid || !data.exists())",
         "chat": {
-           ".read": "auth != null && (root.child('sessions').child($sessionID).child('patientId').val() == auth.uid || root.child('sessions').child($sessionID).child('doctorId').val() == auth.uid)",
-           ".write": "auth != null"
+          ".read": "auth != null && (root.child('sessions').child($sessionID).child('patientId').val() == auth.uid || root.child('sessions').child($sessionID).child('doctorId').val() == auth.uid)",
+          ".write": "auth != null && (root.child('sessions').child($sessionID).child('patientId').val() == auth.uid || root.child('sessions').child($sessionID).child('doctorId').val() == auth.uid)"
+        },
+        "healthData": {
+          ".read": "auth != null && (root.child('sessions').child($sessionID).child('patientId').val() == auth.uid || root.child('sessions').child($sessionID).child('doctorId').val() == auth.uid)",
+          ".write": "auth != null && root.child('sessions').child($sessionID).child('patientId').val() == auth.uid"
+        },
+        "prescription": {
+          ".read": "auth != null && (root.child('sessions').child($sessionID).child('patientId').val() == auth.uid || root.child('sessions').child($sessionID).child('doctorId').val() == auth.uid)",
+          ".write": "auth != null && root.child('sessions').child($sessionID).child('doctorId').val() == auth.uid"
         }
       }
     }

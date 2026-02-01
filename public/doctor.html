@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hospital - Doctor Panel</title>
+    <title>ADVICA - Doctor Panel</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
@@ -16,17 +16,17 @@
             <p>Access your practitioner dashboard</p>
             <form id="login-form">
                 <div class="input-group">
-                    <label for="email">Doctor ID / Email</label>
+                    <label for="email">Doctor Email</label>
                     <input type="email" id="email" required placeholder="doctor@hospital.com">
                 </div>
                 <div class="input-group">
                     <label for="password">Password</label>
                     <input type="password" id="password" required placeholder="••••••••">
                 </div>
-                <button type="submit" class="btn btn-primary">Authorize</button>
+                <button type="submit" class="btn btn-accent" style="width:100%">Authorize</button>
             </form>
             <div id="approval-notice" class="notice hidden">
-                Your account is pending admin approval.
+                Your account is pending admin approval. Please contact the administrator.
             </div>
         </div>
     </div>
@@ -41,23 +41,24 @@
                 </div>
             </div>
             <div class="header-status">
-                <span id="live-status" class="status-indicator">OFFLINE</span>
+                <span id="live-status" class="status-indicator status-offline">OFFLINE</span>
                 <button id="logout-btn" class="btn btn-outline">Logout</button>
             </div>
         </header>
 
         <main class="content">
             <div id="no-patient-view" class="centered card empty-state">
-                <img src="https://img.icons8.com/ios/100/hospital.png" alt="Hospital">
+                <img src="https://img.icons8.com/ios/100/stethoscope.png" alt="Stethoscope">
                 <h3>Awaiting Patient Assignment</h3>
-                <p>You are currently in the active pool. Patients will be assigned automatically.</p>
+                <p>You are in the active doctor pool. Patients will be assigned automatically when they request a
+                    consultation.</p>
             </div>
 
             <div id="active-consultation" class="hidden">
                 <div class="consultation-grid">
                     <div class="patient-sidebar">
                         <div class="card patient-card">
-                            <h3>Patient Details</h3>
+                            <h3 style="margin-bottom:1rem;">Patient Details</h3>
                             <div class="info-list">
                                 <p><strong>Name:</strong> <span id="p-name">--</span></p>
                                 <p><strong>Age:</strong> <span id="p-age">--</span></p>
@@ -66,7 +67,7 @@
                         </div>
 
                         <div class="card vitals-card">
-                            <h3>Live Vitals</h3>
+                            <h3 style="margin-bottom:1rem;">Live Vitals</h3>
                             <div class="vitals-display">
                                 <div class="vital-box">
                                     <label>BP</label>
@@ -90,21 +91,26 @@
 
                     <div class="main-consultation-area">
                         <div class="video-section card">
-                            <div class="video-placeholder">Video Feed</div>
+                            <div class="video-placeholder">
+                                <img src="https://img.icons8.com/ios-filled/100/ffffff/video-call.png" alt="Video">
+                                <p>Patient Video Feed</p>
+                            </div>
                         </div>
 
                         <div class="chat-section card">
+                            <h4 style="margin-bottom:0.75rem;">Chat with Patient</h4>
                             <div id="chat-messages" class="chat-box"></div>
                             <div class="chat-input-area">
-                                <input type="text" id="chat-input" placeholder="Advice patient...">
-                                <button id="send-btn" class="btn btn-primary">Send Advice</button>
+                                <input type="text" id="chat-input" placeholder="Send advice to patient...">
+                                <button id="send-btn" class="btn btn-primary">Send</button>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="action-footer">
-                    <button id="end-session-btn" class="btn btn-danger">End Consultation & Save Prescription</button>
+                    <button id="end-session-btn" class="btn btn-danger btn-large" style="width:100%">End Consultation &
+                        Write Prescription</button>
                 </div>
             </div>
         </main>
@@ -114,9 +120,12 @@
     <div id="prescription-modal" class="modal hidden">
         <div class="modal-content">
             <h2>Final Prescription</h2>
-            <textarea id="prescription-text" placeholder="Enter medicines and advice..."></textarea>
+            <p style="color:#64748b;margin-bottom:1rem;font-size:0.9rem;">Enter medicines, dosage, and advice for the
+                patient.</p>
+            <textarea id="prescription-text"
+                placeholder="1. Medicine Name - Dosage - Duration&#10;2. ...&#10;&#10;Advice:&#10;- Rest for 2 days&#10;- Drink plenty of water"></textarea>
             <div class="modal-actions">
-                <button id="confirm-end-btn" class="btn btn-primary">Complete Session</button>
+                <button id="confirm-end-btn" class="btn btn-primary">Complete & Send Prescription</button>
             </div>
         </div>
     </div>
