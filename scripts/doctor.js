@@ -29,15 +29,10 @@ loginForm?.addEventListener('submit', async (e) => {
     const email = e.target.email.value;
     const password = e.target.password.value;
     try {
-        const user = await login(email, password, 'doctor');
-        // Check approval
-        const snap = await get(ref(db, `users/doctors/${user.uid}`));
-        if (!snap.val().approved) {
-            alert("Your account is pending admin approval.");
-            await logout();
-        }
+        await login(email, password, 'doctor');
+        // auth.js handles role verification and approval check
     } catch (error) {
-        alert("Login failed: " + error.message);
+        alert(error.message);
     }
 });
 
