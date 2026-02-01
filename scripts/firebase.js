@@ -4,15 +4,15 @@ import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth
 import { getDatabase } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-// TODO: Replace with your project's Firebase configuration
+// ADVICA Firebase Configuration
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    databaseURL: "YOUR_DATABASE_URL",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyDrji6mioMGQ3X6Z3374y-160oIFHC0_Gc",
+    authDomain: "advicaai-a57ee.firebaseapp.com",
+    databaseURL: "https://advicaai-a57ee-default-rtdb.firebaseio.com",
+    projectId: "advicaai-a57ee",
+    storageBucket: "advicaai-a57ee.firebasestorage.app",
+    messagingSenderId: "933625721032",
+    appId: "1:933625721032:web:f4247e3ee52114972e35fd"
 };
 
 const app = initializeApp(firebaseConfig);
