@@ -24,7 +24,6 @@ const doctorModal = document.getElementById('doctor-modal');
 const addDoctorBtn = document.getElementById('add-doctor-btn');
 const closeModal = document.getElementById('close-modal');
 const addDoctorForm = document.getElementById('add-doctor-form');
-
 const statTotal = document.getElementById('stat-total');
 const statActive = document.getElementById('stat-active');
 const statOnline = document.getElementById('stat-online');
@@ -217,7 +216,7 @@ function renderDoctors(doctors) {
         let actions = '';
 
         if (!isApproved && !isBlocked) {
-            actions += `<button class="btn btn-sm btn-primary" onclick="window.approveDoctor('${uid}')">✓ Approve</button> `;
+            actions += `<button class="btn btn-sm btn-primary" onclick="window.approveDoctor('${uid}')">Approve</button> `;
         }
 
         if (isApproved && !isBlocked) {
@@ -228,7 +227,7 @@ function renderDoctors(doctors) {
             actions += `<button class="btn btn-sm btn-accent" onclick="window.unblockDoctor('${uid}')">Unblock</button> `;
         }
 
-        actions += `<button class="btn btn-sm btn-danger" onclick="window.deleteDoctor('${uid}')">✕</button>`;
+        actions += `<button class="btn btn-sm btn-danger" onclick="window.deleteDoctor('${uid}')">Delete</button>`;
 
         tr.innerHTML = `
             <td>
@@ -238,7 +237,7 @@ function renderDoctors(doctors) {
             <td style="font-size:0.85rem;">${doc.email || '-'}</td>
             <td><span class="status-indicator ${statusClass}">${statusText}</span></td>
             <td>
-                ${isApproved ? '<span style="color:#10b981;">✓ Approved</span>' : '<span style="color:#f59e0b;">⏳ Pending</span>'}
+                ${isApproved ? '<span style="color:#10b981;">Approved</span>' : '<span style="color:#f59e0b;">Pending</span>'}
             </td>
             <td style="white-space:nowrap;">${actions}</td>
         `;
@@ -301,8 +300,8 @@ function renderSessions(sessions) {
             <td>${session.doctorName || 'Doctor'}</td>
             <td>${formatDuration(session.startTime, session.endTime)}</td>
             <td>
-                ${session.emergency ? '<span class="status-indicator" style="background:#fee2e2;color:#dc2626;">🚨 EMERGENCY</span> ' : ''}
-                <span class="status-indicator ${isLive ? 'status-active' : 'status-offline'}">${isLive ? '● LIVE' : '✓ Done'}</span>
+                ${session.emergency ? '<span class="status-indicator" style="background:#fee2e2;color:#dc2626;"><span class="icon-svg" style="width:0.9em;height:0.9em;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg></span> EMERGENCY</span> ' : ''}
+                <span class="status-indicator ${isLive ? 'status-active' : 'status-offline'}">${isLive ? 'LIVE' : 'Done'}</span>
             </td>
         `;
         list.appendChild(tr);

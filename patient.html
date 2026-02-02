@@ -101,7 +101,11 @@
 
             <!-- Prescription History Section -->
             <section id="history-section" class="patient-history">
-                <h3 style="margin-bottom:1rem;">📋 My Consultations</h3>
+                <h3 style="margin-bottom:1rem;"><span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24" fill="currentColor">
+                            <path
+                                d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" />
+                        </svg></span> My Consultations</h3>
                 <div id="patient-history-list">
                     <!-- JS populated -->
                 </div>
@@ -120,7 +124,10 @@
 
             <div id="consultation-area" class="hidden">
                 <div id="doctor-disconnect-notice" class="disconnect-notice hidden">
-                    <span>⚠️ Doctor disconnected!</span>
+                    <span><span class="icon-svg" style="color:var(--warning);"><svg xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
+                            </svg></span> Doctor disconnected!</span>
                     <button id="find-new-doctor-btn" class="btn btn-primary btn-sm">Find New Doctor</button>
                 </div>
 
@@ -205,7 +212,11 @@
     <!-- Prescription Modal -->
     <div id="prescription-modal" class="modal hidden">
         <div class="modal-content">
-            <h2>📋 Prescription</h2>
+            <h2><span class="icon-svg icon-lg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                        fill="currentColor">
+                        <path
+                            d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" />
+                    </svg></span> Prescription</h2>
             <div id="prescription-details">
                 <p><strong>Doctor:</strong> <span id="rx-doctor">--</span></p>
                 <p><strong>Date:</strong> <span id="rx-date">--</span></p>

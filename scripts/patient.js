@@ -408,7 +408,7 @@ async function loadPatientHistory(patientId) {
                     <span class="date">${date}</span>
                 </div>
                 <div class="history-card-body">
-                    ${session.emergency ? '<span style="color:var(--danger);font-size:0.8rem;">🚨 Emergency</span> ' : ''}
+                    ${session.emergency ? '<span class="icon-svg" style="color:var(--danger);width:0.9em;height:0.9em;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg></span> Emergency ' : ''}
                     <div class="prescription-preview">${prescriptionPreview}</div>
                 </div>
             `;

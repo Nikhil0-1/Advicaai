@@ -169,7 +169,7 @@ function showConsultation(sid) {
         if (nameEl) {
             nameEl.innerText = session.patientName || 'Patient';
             if (session.emergency) {
-                nameEl.innerText += ' [🚨 EMERGENCY]';
+                nameEl.innerHTML = nameEl.innerText + ' <span class="icon-svg" style="color:#ef4444;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg></span> EMERGENCY';
                 nameEl.style.color = '#ef4444';
             }
         }
@@ -328,6 +328,8 @@ confirmEndBtn?.addEventListener('click', async () => {
     } catch (error) {
         console.error('End session error:', error);
         alert('Error ending session: ' + error.message);
+    } finally {
+        // Always reset button state
         btn.disabled = false;
         btn.innerText = originalText;
     }
@@ -396,13 +398,13 @@ async function loadConsultationHistory(doctorId) {
             tr.innerHTML = `
                 <td>
                     ${session.patientName || 'Patient'}
-                    ${isEmergency ? '<span style="color:#ef4444;font-size:0.8rem;"> 🚨</span>' : ''}
+                    ${isEmergency ? '<span class="icon-svg" style="color:#ef4444;width:0.9em;height:0.9em;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg></span>' : ''}
                 </td>
                 <td style="font-size:0.85rem;">${date}</td>
                 <td>${duration}</td>
                 <td>
                     <span class="status-indicator ${isCompleted ? 'status-offline' : 'status-active'}">
-                        ${isCompleted ? '✓ Done' : '● Active'}
+                        ${isCompleted ? 'Done' : 'Active'}
                     </span>
                 </td>
             `;
