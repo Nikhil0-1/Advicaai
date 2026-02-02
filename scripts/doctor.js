@@ -127,18 +127,35 @@ function startHeartbeat(uid) {
 }
 
 // Monitor Doctor's Session Assignment
-function monitorSessions(uid) {
+async function monitorSessions(uid) {
     console.log('Monitoring sessions for doctor:', uid);
 
     // Listen for session assignment
-    onValue(ref(db, `users/doctors/${uid}`), (snapshot) => {
+    onValue(ref(db, `users/doctors/${uid}`), async (snapshot) => {
         const data = snapshot.val();
         currentDoctorData = data;
 
         if (data?.activeSessionId && data.activeSessionId !== currentSessionId) {
-            currentSessionId = data.activeSessionId;
-            console.log('New session assigned:', currentSessionId);
-            showConsultation(currentSessionId);
+            // Validate session exists and is still active
+            const sessionSnap = await get(ref(db, `sessions/${data.activeSessionId}`));
+            const session = sessionSnap.val();
+
+            if (session && session.status === 'ACTIVE' && !session.endTime) {
+                currentSessionId = data.activeSessionId;
+                console.log('New session assigned:', currentSessionId);
+                showConsultation(currentSessionId);
+            } else {
+                // Session ended or doesn't exist - clear stale data
+                console.log('Stale session detected, clearing...');
+                await update(ref(db, `users/doctors/${uid}`), {
+                    activeSessionId: null,
+                    busy: false
+                });
+                if (currentSessionId) {
+                    currentSessionId = null;
+                    hideConsultation();
+                }
+            }
         } else if (!data?.activeSessionId && currentSessionId) {
             console.log('Session ended');
             currentSessionId = null;
