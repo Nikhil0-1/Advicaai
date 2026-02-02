@@ -48,11 +48,46 @@
         </header>
 
         <main class="content">
-            <div id="no-patient-view" class="centered card empty-state">
-                <img src="https://img.icons8.com/ios/100/stethoscope.png" alt="Stethoscope">
-                <h3>Awaiting Patient Assignment</h3>
-                <p>You are in the active doctor pool. Patients will be assigned automatically when they request a
-                    consultation.</p>
+            <div id="no-patient-view">
+                <div class="doctor-stats-grid">
+                    <div class="stat-card card">
+                        <label>Total Patients</label>
+                        <h2 id="stat-patients">0</h2>
+                    </div>
+                    <div class="stat-card card">
+                        <label>Sessions Today</label>
+                        <h2 id="stat-today" class="color-primary">0</h2>
+                    </div>
+                    <div class="stat-card card">
+                        <label>Emergencies</label>
+                        <h2 id="stat-emergencies" class="color-danger">0</h2>
+                    </div>
+                </div>
+
+                <div class="centered card empty-state" style="margin-bottom:1.5rem;">
+                    <img src="https://img.icons8.com/ios/80/stethoscope.png" alt="Stethoscope" style="opacity:0.6;">
+                    <h3>Awaiting Patient Assignment</h3>
+                    <p>You are online and active. Patients will be assigned automatically.</p>
+                </div>
+
+                <section class="history-section">
+                    <h3 style="margin-bottom:1rem;">Recent Consultations</h3>
+                    <div class="card table-card">
+                        <table id="history-table">
+                            <thead>
+                                <tr>
+                                    <th>Patient</th>
+                                    <th>Date</th>
+                                    <th>Duration</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-list">
+                                <!-- JS populated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
             </div>
 
             <div id="active-consultation" class="hidden">

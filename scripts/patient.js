@@ -199,8 +199,9 @@ function startFailSafeWatcher(docId) {
             const lastActive = docData?.lastActiveTime || 0;
 
             if ((Date.now() - lastActive) > 30000 || docData?.status === 'INACTIVE') {
-                console.warn('Doctor disconnected. Attempting reassignment...');
-                await handleDoctorDisconnection(docId);
+                console.warn('Doctor disconnected!');
+                showDoctorDisconnectNotice();
+                stopFailSafeWatcher();
             }
         } catch (error) {
             console.error('Fail-safe check error:', error);
@@ -215,48 +216,88 @@ function stopFailSafeWatcher() {
     }
 }
 
-// Handle Doctor Disconnection
-async function handleDoctorDisconnection(oldDocId) {
-    stopFailSafeWatcher();
+// Show disconnect notice
+function showDoctorDisconnectNotice() {
+    const notice = document.getElementById('doctor-disconnect-notice');
+    if (notice) notice.classList.remove('hidden');
+    if (doctorNameEl) {
+        doctorNameEl.innerText = 'Doctor Disconnected';
+        doctorNameEl.className = 'status-indicator status-inactive';
+    }
+}
 
-    // Mark old doctor as inactive
-    await update(ref(db, `users/doctors/${oldDocId}`), {
-        status: 'INACTIVE',
-        busy: false,
-        activeSessionId: null
-    });
+// Hide disconnect notice
+function hideDoctorDisconnectNotice() {
+    const notice = document.getElementById('doctor-disconnect-notice');
+    if (notice) notice.classList.add('hidden');
+}
 
-    // Find new doctor
-    const doctorsSnap = await get(ref(db, 'users/doctors'));
-    const doctors = doctorsSnap.val() || {};
+// Find new doctor button handler
+const findNewDoctorBtn = document.getElementById('find-new-doctor-btn');
+findNewDoctorBtn?.addEventListener('click', findNewDoctor);
 
-    const nextDoc = Object.entries(doctors).find(([uid, doc]) => {
-        return doc.approved && doc.status === 'ACTIVE' && !doc.busy &&
-            (Date.now() - (doc.lastActiveTime || 0)) < 30000;
-    });
+// Find and assign new doctor
+async function findNewDoctor() {
+    if (!currentSessionId) return;
 
-    if (nextDoc) {
-        const [newDocId, newDocData] = nextDoc;
-        assignedDoctorId = newDocId;
+    findNewDoctorBtn.disabled = true;
+    findNewDoctorBtn.innerText = 'Searching...';
 
-        // Update session
-        await update(ref(db, `sessions/${currentSessionId}`), {
-            doctorId: newDocId,
-            doctorName: newDocData.name
+    try {
+        // Mark old doctor as free
+        if (assignedDoctorId) {
+            await update(ref(db, `users/doctors/${assignedDoctorId}`), {
+                busy: false,
+                activeSessionId: null
+            });
+        }
+
+        // Find new doctor
+        const doctorsSnap = await get(ref(db, 'users/doctors'));
+        const doctors = doctorsSnap.val() || {};
+
+        const nextDoc = Object.entries(doctors).find(([uid, doc]) => {
+            return doc.approved && doc.status === 'ACTIVE' && !doc.busy &&
+                (Date.now() - (doc.lastActiveTime || 0)) < 30000;
         });
 
-        // Lock new doctor
-        await update(ref(db, `users/doctors/${newDocId}`), {
-            busy: true,
-            activeSessionId: currentSessionId
-        });
+        if (nextDoc) {
+            const [newDocId, newDocData] = nextDoc;
+            assignedDoctorId = newDocId;
 
-        if (doctorNameEl) doctorNameEl.innerText = `Dr. ${newDocData.name} (Reassigned)`;
-        startFailSafeWatcher(newDocId);
-        alert('Your doctor disconnected. A new doctor has been assigned.');
-    } else {
-        alert('Your doctor disconnected. No other doctors available. Please wait.');
-        if (doctorNameEl) doctorNameEl.innerText = 'Waiting for available doctor...';
+            // Update session with new doctor
+            await update(ref(db, `sessions/${currentSessionId}`), {
+                doctorId: newDocId,
+                doctorName: newDocData.name,
+                reassigned: true
+            });
+
+            // Lock new doctor
+            await update(ref(db, `users/doctors/${newDocId}`), {
+                busy: true,
+                activeSessionId: currentSessionId
+            });
+
+            // Update UI
+            hideDoctorDisconnectNotice();
+            if (doctorNameEl) {
+                doctorNameEl.innerText = `Dr. ${newDocData.name}`;
+                doctorNameEl.className = 'status-indicator status-active';
+            }
+
+            // Restart monitoring
+            startFailSafeWatcher(newDocId);
+
+            alert(`New doctor assigned: Dr. ${newDocData.name}`);
+        } else {
+            alert('No doctors available right now. Please try again in a moment.');
+        }
+    } catch (error) {
+        console.error('Find new doctor error:', error);
+        alert('Error: ' + error.message);
+    } finally {
+        findNewDoctorBtn.disabled = false;
+        findNewDoctorBtn.innerText = 'Find New Doctor';
     }
 }
 

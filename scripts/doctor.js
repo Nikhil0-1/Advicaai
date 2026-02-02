@@ -339,6 +339,93 @@ cancelPrescriptionBtn?.addEventListener('click', () => {
     if (prescriptionModal) prescriptionModal.classList.add('hidden');
 });
 
+// Load Doctor's Consultation History
+async function loadConsultationHistory(doctorId) {
+    console.log('Loading consultation history for:', doctorId);
+
+    try {
+        const sessionsSnap = await get(ref(db, 'sessions'));
+        const allSessions = sessionsSnap.val() || {};
+
+        // Filter sessions for this doctor
+        const doctorSessions = Object.entries(allSessions)
+            .filter(([sid, session]) => session.doctorId === doctorId)
+            .sort((a, b) => (b[1].startTime || 0) - (a[1].startTime || 0))
+            .slice(0, 10); // Last 10 sessions
+
+        // Update stats
+        const totalPatients = doctorSessions.length;
+        const todayStart = new Date().setHours(0, 0, 0, 0);
+        const todaySessions = doctorSessions.filter(([sid, s]) => (s.startTime || 0) >= todayStart).length;
+        const emergencies = doctorSessions.filter(([sid, s]) => s.emergency).length;
+
+        const statPatientsEl = document.getElementById('stat-patients');
+        const statTodayEl = document.getElementById('stat-today');
+        const statEmergenciesEl = document.getElementById('stat-emergencies');
+
+        if (statPatientsEl) statPatientsEl.innerText = totalPatients;
+        if (statTodayEl) statTodayEl.innerText = todaySessions;
+        if (statEmergenciesEl) statEmergenciesEl.innerText = emergencies;
+
+        // Render history table
+        const historyList = document.getElementById('history-list');
+        if (!historyList) return;
+
+        historyList.innerHTML = '';
+
+        if (doctorSessions.length === 0) {
+            historyList.innerHTML = `
+                <tr>
+                    <td colspan="4" style="text-align:center;color:#64748b;padding:2rem;">
+                        No consultations yet. Your patient history will appear here.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        doctorSessions.forEach(([sid, session]) => {
+            const tr = document.createElement('tr');
+            const date = new Date(session.startTime).toLocaleDateString('en-IN', {
+                day: '2-digit', month: 'short', year: '2-digit'
+            });
+            const duration = formatDuration(session.startTime, session.endTime);
+            const isEmergency = session.emergency;
+            const isCompleted = !!session.endTime;
+
+            tr.innerHTML = `
+                <td>
+                    ${session.patientName || 'Patient'}
+                    ${isEmergency ? '<span style="color:#ef4444;font-size:0.8rem;"> 🚨</span>' : ''}
+                </td>
+                <td style="font-size:0.85rem;">${date}</td>
+                <td>${duration}</td>
+                <td>
+                    <span class="status-indicator ${isCompleted ? 'status-offline' : 'status-active'}">
+                        ${isCompleted ? '✓ Done' : '● Active'}
+                    </span>
+                </td>
+            `;
+            historyList.appendChild(tr);
+        });
+
+    } catch (error) {
+        console.error('Error loading history:', error);
+    }
+}
+
+// Format duration helper
+function formatDuration(startTime, endTime) {
+    if (!startTime) return '-';
+    const end = endTime || Date.now();
+    const min = Math.floor((end - startTime) / 60000);
+    if (min < 1) return '< 1 min';
+    if (min < 60) return `${min} min`;
+    const hrs = Math.floor(min / 60);
+    const rem = min % 60;
+    return `${hrs}h ${rem}m`;
+}
+
 // Initialize after auth success
 window.addEventListener('auth-success', async (e) => {
     currentDoctor = e.detail;
@@ -355,7 +442,11 @@ window.addEventListener('auth-success', async (e) => {
     if (nameEl) nameEl.innerText = `Dr. ${currentDoctorData?.name || currentDoctor.displayName || 'Practitioner'}`;
     if (idEl) idEl.innerText = `ID: ${currentDoctor.uid.substring(0, 8)}`;
 
+    // Load consultation history
+    await loadConsultationHistory(currentDoctor.uid);
+
     // Start heartbeat and session monitoring
     startHeartbeat(currentDoctor.uid);
     monitorSessions(currentDoctor.uid);
 });
+
