@@ -143,6 +143,10 @@ async function monitorSessions(uid) {
             if (session && session.status === 'ACTIVE' && !session.endTime) {
                 currentSessionId = data.activeSessionId;
                 console.log('New session assigned:', currentSessionId);
+
+                // Alert the doctor!
+                alert(`New Patient Request: ${session.patientName || 'Patient'} needs consultation!\nSymptoms: ${session.symptoms || 'Not specified'}`);
+
                 showConsultation(currentSessionId);
             } else {
                 // Session ended or doesn't exist - clear stale data
@@ -190,6 +194,10 @@ function showConsultation(sid) {
                 nameEl.style.color = '#ef4444';
             }
         }
+
+        // Update Symptoms
+        const sxEl = document.getElementById('p-symptoms');
+        if (sxEl) sxEl.innerText = session.symptoms || 'Not specified';
 
         // Load patient details
         if (session.patientId) {
