@@ -13,6 +13,8 @@ let currentSessionId = null;
 let assignedDoctorId = null;
 let failSafeTimer = null;
 
+const consultationArea = document.getElementById('consultation-area');
+
 // DOM Elements
 const sidebar = document.getElementById('sidebar');
 const closeSidebarBtn = document.getElementById('close-sidebar');
@@ -23,6 +25,9 @@ const consultModal = document.getElementById('consult-modal');
 const confirmConsultBtn = document.getElementById('confirm-consult');
 const cancelConsultBtn = document.getElementById('cancel-consult');
 const consultSymptomsInput = document.getElementById('consult-symptoms');
+
+// Ensure hidden on load
+if (consultationArea) consultationArea.classList.add('hidden');
 
 // Views
 const views = {
