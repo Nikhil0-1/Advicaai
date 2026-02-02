@@ -26,13 +26,22 @@ const confirmEndBtn = document.getElementById('confirm-end-btn');
 // Event Listeners
 loginForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email = e.target.email.value;
-    const password = e.target.password.value;
+    const btn = e.target.querySelector('button[type="submit"]');
+    const originalText = btn.innerText;
+
     try {
+        btn.disabled = true;
+        btn.innerText = 'Signing in...';
+
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+
         await login(email, password, 'doctor');
-        // auth.js handles role verification and approval check
+
     } catch (error) {
         alert(error.message);
+        btn.disabled = false;
+        btn.innerText = originalText;
     }
 });
 

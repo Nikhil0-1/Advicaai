@@ -19,7 +19,7 @@
         ".read": "auth != null",
         "$uid": {
           ".read": "auth != null",
-          ".write": "false"
+          ".write": "auth != null && auth.uid == $uid"
         }
       }
     },

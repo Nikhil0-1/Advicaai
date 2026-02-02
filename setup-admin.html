@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADVICA - Admin Setup</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .setup-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 2rem;
+            max-width: 480px;
+            width: 100%;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .setup-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .setup-header h1 {
+            font-size: 1.5rem;
+            color: #1e293b;
+            margin-bottom: 0.25rem;
+        }
+
+        .setup-header p {
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+
+        .credentials-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .credentials-box h3 {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .cred-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+        }
+
+        .cred-row:first-of-type {
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .cred-row label {
+            font-weight: 500;
+            color: #334155;
+        }
+
+        .cred-row code {
+            background: #e2e8f0;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .action-btn {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-bottom: 0.5rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .action-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        #log-area {
+            background: #0f172a;
+            border-radius: 10px;
+            padding: 0.75rem;
+            margin-top: 1rem;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            line-height: 1.6;
+        }
+
+        .log-entry {
+            padding: 0.125rem 0;
+        }
+
+        .log-entry.success {
+            color: #4ade80;
+        }
+
+        .log-entry.error {
+            color: #f87171;
+        }
+
+        .log-entry.info {
+            color: #60a5fa;
+        }
+
+        .log-entry.warning {
+            color: #fbbf24;
+        }
+
+        .success-box {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            border: 2px solid #10b981;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .success-box h2 {
+            color: #065f46;
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .success-box p {
+            color: #047857;
+            margin-bottom: 1rem;
+        }
+
+        .success-box a {
+            display: inline-block;
+            padding: 0.75rem 2rem;
+            background: #10b981;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .success-box a:hover {
+            background: #059669;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="setup-card">
+        <div class="setup-header">
+            <h1>🔐 Admin Setup</h1>
+            <p>One-click admin account setup for ADVICA</p>
+        </div>
+
+        <div class="credentials-box">
+            <h3>Admin Credentials</h3>
+            <div class="cred-row">
+                <label>Email:</label>
+                <code>admin@advica.com</code>
+            </div>
+            <div class="cred-row">
+                <label>Password:</label>
+                <code>Admin@123</code>
+            </div>
+        </div>
+
+        <button id="auto-fix-btn" class="action-btn btn-primary">
+            � Setup Admin Account
+        </button>
+
+        <button id="test-btn" class="action-btn btn-success">
+            ✅ Test Login
+        </button>
+
+        <div id="log-area">
+            <div class="log-entry info">Ready. Click "Setup Admin Account" to begin...</div>
+        </div>
+
+        <div id="success-box" class="success-box hidden">
+            <h2>✅ Admin Account Ready!</h2>
+            <p>Login with: admin@advica.com / Admin@123</p>
+            <a href="admin.html">→ Go to Admin Panel</a>
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase SDK - Using CDN imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import {
+            getAuth,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            signOut
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import {
+            getDatabase,
+            ref,
+            set,
+            get
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // Firebase Configuration - EXACT match with Firebase Console
+        const firebaseConfig = {
+            apiKey: "AIzaSyDrji6mioMGQ3X6Z3374y-160oIFHC0_Gc",
+            authDomain: "advicaai-a57ee.firebaseapp.com",
+            databaseURL: "https://advicaai-a57ee-default-rtdb.firebaseio.com",
+            projectId: "advicaai-a57ee",
+            storageBucket: "advicaai-a57ee.firebasestorage.app",
+            messagingSenderId: "933625721032",
+            appId: "1:933625721032:web:f4247e3ee52114972e35fd"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        // Admin Credentials
+        const ADMIN_EMAIL = "admin@advica.com";
+        const ADMIN_PASSWORD = "Admin@123";
+
+        // DOM Elements
+        const logArea = document.getElementById('log-area');
+        const successBox = document.getElementById('success-box');
+        const autoFixBtn = document.getElementById('auto-fix-btn');
+        const testBtn = document.getElementById('test-btn');
+
+        // Logging function
+        function log(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+            entry.textContent = `[${time}] ${message}`;
+            logArea.appendChild(entry);
+            logArea.scrollTop = logArea.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function clearLog() {
+            logArea.innerHTML = '';
+        }
+
+        // Main Setup Function
+        autoFixBtn.addEventListener('click', async () => {
+            clearLog();
+            autoFixBtn.disabled = true;
+            autoFixBtn.innerHTML = '⏳ Setting up...';
+
+            log('Starting admin setup...', 'info');
+
+            try {
+                let user = null;
+                let needsDbEntry = true;
+
+                // Step 1: Try to sign in (check if account exists)
+                log('Checking if account exists...', 'info');
+                try {
+                    const cred = await signInWithEmailAndPassword(auth, ADMIN_EMAIL, ADMIN_PASSWORD);
+                    user = cred.user;
+                    log('Account already exists, signed in!', 'success');
+                } catch (signInErr) {
+                    log(`Sign in result: ${signInErr.code}`, 'warning');
+
+                    if (signInErr.code === 'auth/user-not-found' ||
+                        signInErr.code === 'auth/invalid-credential' ||
+                        signInErr.code === 'auth/invalid-email') {
+
+                        // Create new account
+                        log('Creating new admin account...', 'info');
+                        try {
+                            const newCred = await createUserWithEmailAndPassword(auth, ADMIN_EMAIL, ADMIN_PASSWORD);
+                            user = newCred.user;
+                            log('Admin account created!', 'success');
+                        } catch (createErr) {
+                            if (createErr.code === 'auth/email-already-in-use') {
+                                log('Email exists but password may be wrong', 'error');
+                                throw new Error('Account exists with different password. Check Firebase Console.');
+                            }
+                            throw createErr;
+                        }
+                    } else {
+                        throw signInErr;
+                    }
+                }
+
+                // Step 2: Add to database
+                if (user) {
+                    log(`User UID: ${user.uid}`, 'info');
+                    log('Adding admin to database...', 'info');
+
+                    try {
+                        await set(ref(db, `users/admin/${user.uid}`), {
+                            email: ADMIN_EMAIL,
+                            role: 'admin',
+                            name: 'System Administrator',
+                            createdAt: Date.now()
+                        });
+                        log('Database entry created!', 'success');
+                    } catch (dbErr) {
+                        log(`Database error: ${dbErr.message}`, 'error');
+                        log('Check Firebase Console > Realtime Database > Rules', 'warning');
+                        throw dbErr;
+                    }
+
+                    // Step 3: Verify
+                    log('Verifying setup...', 'info');
+                    const snap = await get(ref(db, `users/admin/${user.uid}`));
+
+                    if (snap.exists()) {
+                        log('✓ Admin verified in database!', 'success');
+                        log('🎉 SETUP COMPLETE!', 'success');
+                        successBox.classList.remove('hidden');
+                        autoFixBtn.innerHTML = '✓ Setup Complete';
+                        autoFixBtn.style.background = '#10b981';
+                    } else {
+                        log('Warning: Database write may have failed', 'warning');
+                    }
+
+                    await signOut(auth);
+                }
+
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+                autoFixBtn.disabled = false;
+                autoFixBtn.innerHTML = '🚀 Setup Admin Account';
+            }
+        });
+
+        // Test Login Function
+        testBtn.addEventListener('click', async () => {
+            clearLog();
+            testBtn.disabled = true;
+            testBtn.innerHTML = '⏳ Testing...';
+
+            log('Testing admin login...', 'info');
+
+            try {
+                // Auth test
+                const cred = await signInWithEmailAndPassword(auth, ADMIN_EMAIL, ADMIN_PASSWORD);
+                log(`Auth OK! UID: ${cred.user.uid}`, 'success');
+
+                // Database test
+                const snap = await get(ref(db, `users/admin/${cred.user.uid}`));
+
+                if (snap.exists()) {
+                    log('Database entry exists!', 'success');
+                    log('🎉 LOGIN TEST PASSED!', 'success');
+                    successBox.classList.remove('hidden');
+                } else {
+                    log('User exists in Auth but NOT in Database', 'warning');
+                    log('Click "Setup Admin Account" to fix', 'warning');
+                }
+
+                await signOut(auth);
+
+            } catch (error) {
+                log(`Test failed: ${error.message}`, 'error');
+
+                if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
+                    log('Admin account not found. Click "Setup Admin Account"', 'warning');
+                }
+            }
+
+            testBtn.disabled = false;
+            testBtn.innerHTML = '✅ Test Login';
+        });
+
+        // Initial connection test
+        log('Firebase initialized successfully', 'success');
+        log(`Database URL: ${firebaseConfig.databaseURL}`, 'info');
+    </script>
+</body>
+
+</html>

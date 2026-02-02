@@ -1,7 +1,9 @@
+// Patient Panel - Login, Registration & Consultation
 import { db, auth } from './firebase.js';
-import { checkAuth, login, logout } from './auth.js';
-import { ref, set, onValue, update, get, push, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-import { createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { checkAuth, login, logout, registerPatient } from './auth.js';
+import {
+    ref, set, onValue, update, get, push, remove
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 // Initialize Auth Check
 checkAuth('patient');
@@ -27,67 +29,74 @@ const healthForm = document.getElementById('health-form');
 // Login Handler
 loginForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email = document.getElementById('login-email').value;
-    const password = document.getElementById('login-password').value;
+    const btn = e.target.querySelector('button[type="submit"]');
+    const originalText = btn.innerText;
+
     try {
+        btn.disabled = true;
+        btn.innerText = 'Signing in...';
+
+        const email = document.getElementById('login-email').value.trim();
+        const password = document.getElementById('login-password').value;
+
         await login(email, password, 'patient');
+
     } catch (error) {
-        alert("Login failed: " + error.message);
+        alert(error.message);
+        btn.disabled = false;
+        btn.innerText = originalText;
     }
 });
 
 // Registration Handler
 registerForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const name = document.getElementById('reg-name').value;
-    const email = document.getElementById('reg-email').value;
-    const password = document.getElementById('reg-password').value;
-    const age = document.getElementById('reg-age').value;
-    const bloodGroup = document.getElementById('reg-blood').value;
+    const btn = e.target.querySelector('button[type="submit"]');
+    const originalText = btn.innerText;
 
     try {
-        // Create user in Firebase Auth
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
+        btn.disabled = true;
+        btn.innerText = 'Creating Account...';
 
-        // Update display name
-        await updateProfile(user, { displayName: name });
+        const name = document.getElementById('reg-name').value.trim();
+        const email = document.getElementById('reg-email').value.trim();
+        const password = document.getElementById('reg-password').value;
+        const age = document.getElementById('reg-age').value;
+        const bloodGroup = document.getElementById('reg-blood').value;
 
-        // Save patient data to database
-        await set(ref(db, `users/patients/${user.uid}`), {
-            name,
-            email,
+        await registerPatient(name, email, password, {
             age: parseInt(age),
-            bloodGroup,
-            role: 'patient',
-            createdAt: Date.now()
+            bloodGroup
         });
 
-        alert("Registration successful! Logging you in...");
-        // Auth state change will handle the rest
+        alert('Account created successfully! You are now logged in.');
+
     } catch (error) {
-        alert("Registration failed: " + error.message);
+        alert(error.message);
+        btn.disabled = false;
+        btn.innerText = originalText;
     }
 });
 
+// Logout Handler
 logoutBtn?.addEventListener('click', logout);
 
-// Doctor Assignment Algorithm (CRITICAL)
+// Doctor Assignment - Find Available Doctor
 consultBtn?.addEventListener('click', async () => {
     consultBtn.disabled = true;
-    consultBtn.innerText = "Finding Doctor...";
+    consultBtn.innerText = 'Finding Doctor...';
 
     try {
         const doctorsSnap = await get(ref(db, 'users/doctors'));
         const doctors = doctorsSnap.val() || {};
 
-        // Filter: approved, ACTIVE, not busy, and updated recently (heartbeat check)
+        // Find available doctor: approved, active, not busy, recent heartbeat
         const availableDoctor = Object.entries(doctors).find(([uid, doc]) => {
             const isApproved = doc.approved === true;
             const isActive = doc.status === 'ACTIVE';
             const isNotBusy = doc.busy === false;
             const lastActive = doc.lastActiveTime || 0;
-            const isRecentlyActive = (Date.now() - lastActive) < 30000; // Heartbeat check
+            const isRecentlyActive = (Date.now() - lastActive) < 30000;
 
             return isApproved && isActive && isNotBusy && isRecentlyActive;
         });
@@ -95,19 +104,21 @@ consultBtn?.addEventListener('click', async () => {
         if (availableDoctor) {
             const [docId, docData] = availableDoctor;
             assignedDoctorId = docId;
-            startSession(docId, docData.name);
+            await startSession(docId, docData.name);
         } else {
-            alert("No doctors available right now. Please try again in a few minutes.");
+            alert('No doctors available right now. Please try again in a few minutes.');
             consultBtn.disabled = false;
-            consultBtn.innerText = "⚕️ Consult Doctor";
+            consultBtn.innerHTML = `<span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 8h-1.81c-.45-.78-1.07-1.45-1.82-1.96l1.1-1.1-1.41-1.41-1.47 1.47A5.93 5.93 0 0 0 12 4.5c-.64 0-1.26.09-1.86.26L8.67 3.29 7.26 4.7l1.1 1.1C7.61 6.35 6.99 7.02 6.54 7.8H5v2h1.09c-.05.33-.09.66-.09 1s.04.67.09 1H5v2h1.54c1.07 2.01 3.18 3.4 5.62 3.4h.12c2.44 0 4.55-1.39 5.62-3.4H19v-2h-1.09c.05-.33.09-.66.09-1s-.04-.67-.09-1H19V8zm-7 6c-1.65 0-3-1.35-3-3s1.35-3 3-3 3 1.35 3 3-1.35 3-3 3z"/><circle cx="12" cy="11" r="1.5"/></svg></span> Consult Doctor`;
         }
     } catch (error) {
-        alert("Error finding doctor: " + error.message);
+        console.error('Error finding doctor:', error);
+        alert('Error finding doctor: ' + error.message);
         consultBtn.disabled = false;
-        consultBtn.innerText = "⚕️ Consult Doctor";
+        consultBtn.innerHTML = `<span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 8h-1.81c-.45-.78-1.07-1.45-1.82-1.96l1.1-1.1-1.41-1.41-1.47 1.47A5.93 5.93 0 0 0 12 4.5c-.64 0-1.26.09-1.86.26L8.67 3.29 7.26 4.7l1.1 1.1C7.61 6.35 6.99 7.02 6.54 7.8H5v2h1.09c-.05.33-.09.66-.09 1s.04.67.09 1H5v2h1.54c1.07 2.01 3.18 3.4 5.62 3.4h.12c2.44 0 4.55-1.39 5.62-3.4H19v-2h-1.09c.05-.33.09-.66.09-1s-.04-.67-.09-1H19V8zm-7 6c-1.65 0-3-1.35-3-3s1.35-3 3-3 3 1.35 3 3-1.35 3-3 3z"/><circle cx="12" cy="11" r="1.5"/></svg></span> Consult Doctor`;
     }
 });
 
+// Start Consultation Session
 async function startSession(docId, docName) {
     const sessionRef = push(ref(db, 'sessions'));
     currentSessionId = sessionRef.key;
@@ -122,38 +133,39 @@ async function startSession(docId, docName) {
         status: 'ACTIVE'
     };
 
-    // 1. Create session
+    // Create session
     await set(sessionRef, sessionData);
 
-    // 2. Lock doctor
+    // Lock doctor
     await update(ref(db, `users/doctors/${docId}`), {
         busy: true,
         activeSessionId: currentSessionId
     });
 
-    // 3. Update UI
+    // Show consultation UI
     showConsultation(docName);
 
-    // 4. Start Fail-Safe Watcher
+    // Start fail-safe monitoring
     startFailSafeWatcher(docId);
 }
 
-// Emergency Flagging
+// Emergency Flag
 async function flagEmergency() {
     if (!currentSessionId) return;
     await update(ref(db, `sessions/${currentSessionId}`), { emergency: true });
-    alert("Emergency flagged! Admin and Doctor notified.");
+    alert('Emergency flagged! Admin and Doctor notified.');
 }
 window.flagEmergency = flagEmergency;
 
-
+// Show Consultation UI
 function showConsultation(docName) {
-    actionSection.classList.add('hidden');
-    consultationArea.classList.remove('hidden');
-    doctorNameEl.innerText = `Dr. ${docName}`;
+    actionSection?.classList.add('hidden');
+    consultationArea?.classList.remove('hidden');
+    if (doctorNameEl) doctorNameEl.innerText = `Dr. ${docName}`;
 
-    // Monitor Chat
+    // Monitor chat messages
     onValue(ref(db, `sessions/${currentSessionId}/chat`), (snap) => {
+        if (!chatMessages) return;
         chatMessages.innerHTML = '';
         const msgs = snap.val() || {};
         Object.values(msgs).forEach(m => {
@@ -165,55 +177,69 @@ function showConsultation(docName) {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     });
 
-    // Monitor Session Status (check if ended by doctor)
+    // Monitor session end
     onValue(ref(db, `sessions/${currentSessionId}`), (snap) => {
         const session = snap.val();
         if (session && session.endTime) {
             stopFailSafeWatcher();
-            alert("Consultation ended. Prescription is available in your records.");
+            alert('Consultation ended. Prescription is available in your records.');
             window.location.reload();
         }
     });
 }
 
-// Fail-Safe Algorithm (MANDATORY)
+// Fail-Safe: Monitor Doctor Connection
 function startFailSafeWatcher(docId) {
     if (failSafeTimer) clearInterval(failSafeTimer);
-    failSafeTimer = setInterval(async () => {
-        const docSnap = await get(ref(db, `users/doctors/${docId}`));
-        const docData = docSnap.val();
-        const lastActive = docData.lastActiveTime || 0;
 
-        if ((Date.now() - lastActive) > 30000 || docData.status === 'INACTIVE') {
-            console.warn("Assigned doctor became inactive. Reassigning...");
-            handleDoctorDisconnection(docId);
+    failSafeTimer = setInterval(async () => {
+        try {
+            const docSnap = await get(ref(db, `users/doctors/${docId}`));
+            const docData = docSnap.val();
+            const lastActive = docData?.lastActiveTime || 0;
+
+            if ((Date.now() - lastActive) > 30000 || docData?.status === 'INACTIVE') {
+                console.warn('Doctor disconnected. Attempting reassignment...');
+                await handleDoctorDisconnection(docId);
+            }
+        } catch (error) {
+            console.error('Fail-safe check error:', error);
         }
     }, 10000);
 }
 
 function stopFailSafeWatcher() {
-    if (failSafeTimer) clearInterval(failSafeTimer);
+    if (failSafeTimer) {
+        clearInterval(failSafeTimer);
+        failSafeTimer = null;
+    }
 }
 
+// Handle Doctor Disconnection
 async function handleDoctorDisconnection(oldDocId) {
     stopFailSafeWatcher();
 
-    // Mark old doctor inactive if not already
-    await update(ref(db, `users/doctors/${oldDocId}`), { status: 'INACTIVE', busy: false, activeSessionId: null });
+    // Mark old doctor as inactive
+    await update(ref(db, `users/doctors/${oldDocId}`), {
+        status: 'INACTIVE',
+        busy: false,
+        activeSessionId: null
+    });
 
-    // Try to reassign immediately
+    // Find new doctor
     const doctorsSnap = await get(ref(db, 'users/doctors'));
     const doctors = doctorsSnap.val() || {};
 
     const nextDoc = Object.entries(doctors).find(([uid, doc]) => {
-        return doc.approved && doc.status === 'ACTIVE' && !doc.busy && (Date.now() - (doc.lastActiveTime || 0)) < 30000;
+        return doc.approved && doc.status === 'ACTIVE' && !doc.busy &&
+            (Date.now() - (doc.lastActiveTime || 0)) < 30000;
     });
 
     if (nextDoc) {
         const [newDocId, newDocData] = nextDoc;
         assignedDoctorId = newDocId;
 
-        // Update Session with new Doctor
+        // Update session
         await update(ref(db, `sessions/${currentSessionId}`), {
             doctorId: newDocId,
             doctorName: newDocData.name
@@ -225,59 +251,73 @@ async function handleDoctorDisconnection(oldDocId) {
             activeSessionId: currentSessionId
         });
 
-        doctorNameEl.innerText = `Dr. ${newDocData.name} (Reassigned)`;
+        if (doctorNameEl) doctorNameEl.innerText = `Dr. ${newDocData.name} (Reassigned)`;
         startFailSafeWatcher(newDocId);
-        alert("Your doctor disconnected. We have assigned a new doctor to continue your session.");
+        alert('Your doctor disconnected. A new doctor has been assigned.');
     } else {
-        alert("Your doctor disconnected and no other doctors are available. Please wait or try again.");
-        // Stay in consultation area but show waiting status
-        doctorNameEl.innerText = `Waiting for available doctor...`;
+        alert('Your doctor disconnected. No other doctors available. Please wait.');
+        if (doctorNameEl) doctorNameEl.innerText = 'Waiting for available doctor...';
     }
 }
 
 // Health Data Submission
 healthForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (!currentSessionId) return;
+    if (!currentSessionId) {
+        alert('No active session');
+        return;
+    }
 
     const healthData = {
-        bp: document.getElementById('bp').value,
-        temp: document.getElementById('temp').value,
-        sugar: document.getElementById('sugar').value,
-        spo2: document.getElementById('spo2').value,
+        bp: document.getElementById('bp')?.value || '',
+        temp: document.getElementById('temp')?.value || '',
+        sugar: document.getElementById('sugar')?.value || '',
+        spo2: document.getElementById('spo2')?.value || '',
         timestamp: Date.now()
     };
 
     await update(ref(db, `sessions/${currentSessionId}/healthData`), healthData);
-    alert("Vitals submitted successfully!");
+    alert('Vitals submitted successfully!');
 });
 
 // Chat Logic
 sendBtn?.addEventListener('click', sendMessage);
-chatInput?.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+chatInput?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendMessage();
+});
 
 async function sendMessage() {
-    if (!chatInput.value.trim() || !currentSessionId) return;
+    const text = chatInput?.value?.trim();
+    if (!text || !currentSessionId) return;
+
     const msgRef = push(ref(db, `sessions/${currentSessionId}/chat`));
     await set(msgRef, {
         role: 'patient',
-        text: chatInput.value,
+        text,
         timestamp: Date.now()
     });
-    chatInput.value = '';
+
+    if (chatInput) chatInput.value = '';
 }
 
-// Initialization
+// Initialize after auth success
 window.addEventListener('auth-success', (e) => {
     currentPatient = e.detail;
+    console.log('Patient authenticated:', currentPatient.email);
+
     // Load patient profile
     onValue(ref(db, `users/patients/${currentPatient.uid}`), (snap) => {
         const profile = snap.val();
         if (profile) {
-            document.getElementById('patient-name').innerText = profile.name;
-            document.getElementById('patient-id').innerText = `ID: ${currentPatient.uid.substring(0, 8)}`;
-            document.getElementById('p-age').innerText = profile.age || '--';
-            document.getElementById('p-blood').innerText = profile.bloodGroup || '--';
+            const nameEl = document.getElementById('patient-name');
+            const idEl = document.getElementById('patient-id');
+            const ageEl = document.getElementById('p-age');
+            const bloodEl = document.getElementById('p-blood');
+
+            if (nameEl) nameEl.innerText = profile.name || 'Patient';
+            if (idEl) idEl.innerText = `ID: ${currentPatient.uid.substring(0, 8)}`;
+            if (ageEl) ageEl.innerText = profile.age || '--';
+            if (bloodEl) bloodEl.innerText = profile.bloodGroup || '--';
         }
     });
 });
