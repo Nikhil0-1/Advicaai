@@ -1320,7 +1320,7 @@ td {
 }
 
 /* =========================================
-   PROFESSIONAL CONSULTATION UI (Mobile First)
+   UNIFIED CONSULTATION VIEW (MATCHES DASHBOARD)
    ========================================= */
 
 .consultation-overlay {
@@ -1329,43 +1329,34 @@ td {
     left: 0;
     right: 0;
     bottom: 0;
-    background: #f1f5f9;
+    background: white;
+    /* Same as dashboard */
     z-index: 2000;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
-    /* Padding will be handled by spacers or fixed layout logic */
-    padding-top: 70px;
-    /* Space for fixed header */
 }
 
-/* Glassmorphic Sticky Header */
+/* Header - Same Style as Dashboard */
 .consult-header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 70px;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+    background: white;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #f1f5f9;
     display: flex;
     align-items: center;
-    padding: 0 1rem;
-    /* Mobile padding */
     gap: 1rem;
-    z-index: 2010;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
-/* Enhanced Back Button */
 .btn-icon {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     background: #f8fafc;
     border: 1px solid #e2e8f0;
-    border-radius: 12px;
+    border-radius: var(--radius);
     color: var(--text-muted);
     transition: all 0.2s ease;
     display: flex;
@@ -1378,77 +1369,77 @@ td {
     background: var(--primary);
     color: white;
     border-color: var(--primary);
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
-    transform: translateY(-1px);
 }
 
-/* Grid Layout */
-.consult-grid {
-    display: grid;
-    grid-template-columns: 2fr 1.2fr;
-    gap: 1.5rem;
-    padding: 1.5rem 2rem;
-    max-width: 1400px;
+/* Content Container - Single Column Like Dashboard */
+.consultation-content {
+    max-width: 1200px;
     width: 100%;
     margin: 0 auto;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    /* EQUAL spacing between ALL cards */
 }
 
-/* Unified Card Styling */
-.consult-grid .card,
-.video-feed,
-.chat-container {
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 20px;
-    box-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.03);
-    overflow: hidden;
+/* Video Card - Same Card System as Dashboard */
+.video-consultation-card h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 1rem;
 }
 
-/* Video Feed Polish */
 .video-feed {
     background: #0f172a;
+    border-radius: var(--radius);
     aspect-ratio: 16/9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.8);
     position: relative;
-    border: none;
-    /* Video stands out */
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
 }
 
 .placeholder-video {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    height: 100%;
-    color: rgba(255, 255, 255, 0.8);
+    gap: 0.75rem;
 }
 
 .placeholder-video svg {
-    opacity: 0.5;
-    margin-bottom: 1rem;
+    opacity: 0.6;
+    width: 64px;
+    height: 64px;
 }
 
-/* Modern Chat */
-.chat-container {
-    height: 100%;
-    max-height: 600px;
-    display: flex;
-    flex-direction: column;
+.placeholder-video p {
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+/* Chat Card - Same Card System */
+.chat-consultation-card {
+    /* Card inherits from .card global styles */
+    overflow: hidden;
 }
 
 .chat-header {
-    padding: 1rem 1.25rem;
+    padding: 1rem 1.5rem;
     border-bottom: 1px solid #f1f5f9;
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 1rem;
     color: var(--text-main);
-    background: #fff;
+    background: #fafbfc;
 }
 
 .chat-messages {
-    flex: 1;
     background: #f8fafc;
-    padding: 1.25rem;
+    padding: 1.5rem;
+    min-height: 300px;
+    max-height: 400px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -1456,7 +1447,7 @@ td {
 }
 
 .chat-input {
-    padding: 1rem;
+    padding: 1.25rem;
     background: white;
     border-top: 1px solid #f1f5f9;
     display: flex;
@@ -1464,83 +1455,110 @@ td {
 }
 
 .chat-input input {
+    flex: 1;
     background: #f1f5f9;
-    border: none;
-    border-radius: 99px;
-    /* Pill shape */
-    padding: 0.75rem 1.25rem;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius);
+    padding: 0.75rem 1rem;
     font-size: 0.95rem;
 }
 
 .chat-input input:focus {
     background: white;
+    border-color: var(--primary);
+    outline: none;
     box-shadow: 0 0 0 2px var(--primary-light);
 }
 
-/* Vitals Form - Professional Panel */
+/* Vitals Card - Same Card System as Dashboard */
+.vitals-consultation-card h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 0.5rem;
+}
+
+.vitals-consultation-card .subtitle {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    margin-bottom: 1.25rem;
+}
+
 .vitals-grid-form {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 1.25rem;
-    align-items: end;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.vitals-grid-form .input-group {
+    display: flex;
+    flex-direction: column;
 }
 
 .vitals-grid-form .input-group label {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--text-muted);
     margin-bottom: 0.5rem;
-    font-weight: 600;
 }
 
 .vitals-grid-form input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius);
+    font-size: 1rem;
     font-family: 'Courier New', monospace;
-    /* Medical data feel */
-    font-weight: 700;
-    font-size: 1.1rem;
+    font-weight: 600;
     color: var(--text-main);
-    letter-spacing: -0.02em;
 }
 
-/* Mobile Responsive Adjustments */
-@media (max-width: 900px) {
-    .consult-grid {
-        grid-template-columns: 1fr;
-        /* Stack Video then Chat */
+.vitals-grid-form input:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+/* Emergency Card - Same Card System */
+.btn-danger.full-width {
+    width: 100%;
+    background: var(--danger);
+    color: white;
+    padding: 1rem;
+    border-radius: var(--radius);
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 1rem;
+}
+
+.btn-danger.full-width:hover {
+    background: #dc2626;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* Mobile Responsive - Maintain Single Column */
+@media (max-width: 768px) {
+    .consultation-content {
         padding: 1rem;
         gap: 1rem;
-    }
-
-    .chat-container {
-        height: 400px;
-        /* Fixed height on mobile so it doesn't vanish */
+        /* Slightly tighter on mobile */
     }
 
     .vitals-grid-form {
         grid-template-columns: 1fr 1fr;
-        /* 2 cols on tablet/mobile */
+        /* 2x2 grid on mobile */
     }
 
-    .consult-header {
-        padding: 0 1rem;
-    }
-}
-
-@media (max-width: 480px) {
-    .vitals-grid-form {
-        grid-template-columns: 1fr 1fr;
-        /* Still 2 cols for compactness */
+    .chat-messages {
+        min-height: 250px;
+        max-height: 300px;
     }
 
-    .btn-icon {
-        width: 38px;
-        height: 38px;
-    }
-}
-
-/* Navigation Mobile */
-@media (max-width: 768px) {
     .sidebar {
         transform: translateX(-100%);
     }
