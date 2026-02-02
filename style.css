@@ -1410,6 +1410,13 @@ td {
     margin-bottom: 1rem;
 }
 
+.vitals-grid-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    align-items: end;
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
     .sidebar {

@@ -311,6 +311,35 @@
                     </div>
                 </div>
 
+                <!-- Live Vitals Form -->
+                <div class="card mt-4" style="max-width: 800px; margin: 0 auto 1rem auto; width:100%;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                        <h3>Update Live Vitals</h3>
+                        <span style="font-size:0.8rem; color:var(--text-muted);">Shared with Dr. instantly</span>
+                    </div>
+                    <form id="vitals-form" class="vitals-grid-form">
+                        <div class="input-group">
+                            <label>BP (mmHg)</label>
+                            <input type="text" id="v-bp" placeholder="120/80">
+                        </div>
+                        <div class="input-group">
+                            <label>Temp (°F)</label>
+                            <input type="text" id="v-temp" placeholder="98.6">
+                        </div>
+                        <div class="input-group">
+                            <label>Sugar (mg/dL)</label>
+                            <input type="text" id="v-sugar" placeholder="100">
+                        </div>
+                        <div class="input-group">
+                            <label>SpO2 (%)</label>
+                            <input type="text" id="v-spo2" placeholder="98">
+                        </div>
+                        <div class="input-group" style="display:flex; align-items:flex-end;">
+                            <button type="submit" class="btn btn-accent" style="width:100%;">Update</button>
+                        </div>
+                    </form>
+                </div>
+
                 <div class="emergency-action mt-4" style="max-width: 800px; margin: 1rem auto;">
                     <button onclick="flagEmergency()" class="btn btn-danger full-width">
                         ⚠️ FLAG EMERGENCY

@@ -467,6 +467,39 @@ document.getElementById('close-prescription-modal')?.addEventListener('click', (
     document.getElementById('prescription-modal').classList.add('hidden');
 });
 
+// Live Vitals Handler
+const vitalsForm = document.getElementById('vitals-form');
+vitalsForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!currentSessionId) {
+        alert("You must be in an active session to update vitals.");
+        return;
+    }
+
+    const btn = vitalsForm.querySelector('button[type="submit"]');
+    const originalText = btn.innerText;
+    btn.disabled = true;
+    btn.innerText = 'Updating...';
+
+    const vitals = {
+        bp: document.getElementById('v-bp').value,
+        temp: document.getElementById('v-temp').value,
+        sugar: document.getElementById('v-sugar').value,
+        spo2: document.getElementById('v-spo2').value,
+        updatedAt: Date.now()
+    };
+
+    try {
+        await update(ref(db, `sessions/${currentSessionId}/healthData`), vitals);
+        alert('Vitals updated! Doctor can see this immediately.');
+    } catch (err) {
+        alert('Failed to update: ' + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerText = originalText;
+    }
+});
+
 // Fail Safe & Emergency
 function startFailSafeWatcher(docId) {
     if (failSafeTimer) clearInterval(failSafeTimer);
