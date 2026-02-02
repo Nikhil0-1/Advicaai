@@ -1,4 +1,4 @@
-// Firebase Auth System - Simplified & Fixed
+// Firebase Auth System - Improved (No Auto-Logout)
 import { auth, db } from './firebase.js';
 import {
     onAuthStateChanged,
@@ -33,7 +33,7 @@ async function getUserRole(uid) {
 }
 
 /**
- * Check authentication and setup UI
+ * Check authentication and setup UI - NO AUTO LOGOUT
  * @param {string} requiredRole - 'patient', 'doctor', or 'admin'
  */
 export function checkAuth(requiredRole) {
@@ -52,39 +52,42 @@ export function checkAuth(requiredRole) {
 
         try {
             const { role, data } = await getUserRole(user.uid);
-            console.log('User role:', role);
+            console.log('User role:', role, 'Required:', requiredRole);
 
-            // No role found
+            // No role found - just show login form, don't logout
             if (!role) {
-                console.log('No role found for user');
+                console.log('No role found, showing login form');
                 if (authContainer) authContainer.classList.remove('hidden');
                 if (mainPanel) mainPanel.classList.add('hidden');
                 return;
             }
 
-            // Wrong role
+            // Wrong role - show message but don't logout automatically
             if (role !== requiredRole) {
-                alert(`You are logged in as ${role}. Please use the correct portal.`);
-                await signOut(auth);
-                window.location.href = 'index.html';
+                console.log(`Role mismatch: user is ${role}, need ${requiredRole}`);
+                if (authContainer) authContainer.classList.remove('hidden');
+                if (mainPanel) mainPanel.classList.add('hidden');
                 return;
             }
 
             // Check if blocked
             if (data?.blocked === true) {
                 alert('Your account has been blocked. Contact administrator.');
-                await signOut(auth);
+                if (authContainer) authContainer.classList.remove('hidden');
+                if (mainPanel) mainPanel.classList.add('hidden');
                 return;
             }
 
             // Doctor needs approval
             if (role === 'doctor' && data?.approved !== true) {
                 alert('Your account is pending admin approval.');
-                await signOut(auth);
+                if (authContainer) authContainer.classList.remove('hidden');
+                if (mainPanel) mainPanel.classList.add('hidden');
                 return;
             }
 
             // SUCCESS - Show main panel
+            console.log('Auth success, showing main panel');
             if (authContainer) authContainer.classList.add('hidden');
             if (mainPanel) mainPanel.classList.remove('hidden');
 
@@ -93,13 +96,15 @@ export function checkAuth(requiredRole) {
 
         } catch (error) {
             console.error('Auth check error:', error);
-            alert('Authentication error: ' + error.message);
+            // Don't auto logout on error, just show login
+            if (authContainer) authContainer.classList.remove('hidden');
+            if (mainPanel) mainPanel.classList.add('hidden');
         }
     });
 }
 
 /**
- * Login function
+ * Login function - validates role before allowing access
  */
 export async function login(email, password, requiredRole) {
     try {
@@ -110,25 +115,22 @@ export async function login(email, password, requiredRole) {
         const { role, data } = await getUserRole(user.uid);
 
         if (!role) {
-            await signOut(auth);
-            throw new Error('Account not registered. Please sign up first.');
+            throw new Error('Account not found in database. Please contact admin or register.');
         }
 
         if (role !== requiredRole) {
-            await signOut(auth);
-            throw new Error(`This is the ${requiredRole} portal. You are registered as ${role}.`);
+            throw new Error(`This is the ${requiredRole} portal. You are registered as ${role}. Please use the correct portal.`);
         }
 
         if (data?.blocked) {
-            await signOut(auth);
-            throw new Error('Your account has been blocked.');
+            throw new Error('Your account has been blocked by administrator.');
         }
 
         if (role === 'doctor' && !data?.approved) {
-            await signOut(auth);
-            throw new Error('Pending admin approval.');
+            throw new Error('Your account is pending admin approval. Please wait.');
         }
 
+        console.log('Login successful:', user.email, 'Role:', role);
         return user;
 
     } catch (error) {
@@ -143,6 +145,9 @@ export async function login(email, password, requiredRole) {
         }
         if (error.code === 'auth/invalid-email') {
             throw new Error('Invalid email format.');
+        }
+        if (error.code === 'auth/too-many-requests') {
+            throw new Error('Too many failed attempts. Please try again later.');
         }
 
         throw error;
@@ -167,16 +172,20 @@ export async function registerPatient(name, email, password, extraData = {}) {
             ...extraData
         });
 
+        console.log('Patient registered:', user.email);
         return user;
 
     } catch (error) {
         console.error('Registration error:', error);
 
         if (error.code === 'auth/email-already-in-use') {
-            throw new Error('Email already registered. Please login.');
+            throw new Error('Email already registered. Please login instead.');
         }
         if (error.code === 'auth/weak-password') {
             throw new Error('Password should be at least 6 characters.');
+        }
+        if (error.code === 'auth/invalid-email') {
+            throw new Error('Invalid email format.');
         }
 
         throw error;
@@ -204,4 +213,11 @@ export async function getCurrentUserRole() {
     if (!user) return null;
     const { role } = await getUserRole(user.uid);
     return role;
+}
+
+/**
+ * Get current user
+ */
+export function getCurrentUser() {
+    return auth.currentUser;
 }

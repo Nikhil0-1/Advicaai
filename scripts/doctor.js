@@ -1,14 +1,22 @@
+// Doctor Panel - Improved with Better Session Handling
 import { db, auth, storage } from './firebase.js';
 import { checkAuth, login, logout } from './auth.js';
-import { ref, set, push, onValue, update, get, onDisconnect } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-import { uploadString, ref as sRef } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+import {
+    ref, set, push, onValue, update, get, onDisconnect, off
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import {
+    uploadString, ref as sRef, getDownloadURL
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 // Initialize Auth Check
 checkAuth('doctor');
 
 let currentDoctor = null;
+let currentDoctorData = null;
 let currentSessionId = null;
 let heartbeatInterval = null;
+let sessionListener = null;
+let chatListener = null;
 
 // DOM Elements
 const loginForm = document.getElementById('login-form');
@@ -23,7 +31,7 @@ const endSessionBtn = document.getElementById('end-session-btn');
 const prescriptionModal = document.getElementById('prescription-modal');
 const confirmEndBtn = document.getElementById('confirm-end-btn');
 
-// Event Listeners
+// Login Handler
 loginForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector('button[type="submit"]');
@@ -45,147 +53,309 @@ loginForm?.addEventListener('submit', async (e) => {
     }
 });
 
+// Logout Handler
 logoutBtn?.addEventListener('click', async () => {
-    if (heartbeatInterval) clearInterval(heartbeatInterval);
-    if (currentDoctor) {
-        await update(ref(db, `users/doctors/${currentDoctor.uid}`), { status: 'OFFLINE', busy: false });
+    try {
+        // Stop heartbeat
+        if (heartbeatInterval) {
+            clearInterval(heartbeatInterval);
+            heartbeatInterval = null;
+        }
+
+        // Set doctor offline
+        if (currentDoctor) {
+            await update(ref(db, `users/doctors/${currentDoctor.uid}`), {
+                status: 'INACTIVE',
+                busy: false,
+                lastActiveTime: Date.now()
+            });
+        }
+
+        await logout();
+    } catch (error) {
+        console.error('Logout error:', error);
+        await logout();
     }
-    await logout();
 });
 
-// Heartbeat Algorithm
+// Heartbeat System - Keep Doctor "Online"
 function startHeartbeat(uid) {
+    console.log('Starting heartbeat for doctor:', uid);
+
     const statusRef = ref(db, `doctorStatus/${uid}`);
     const doctRef = ref(db, `users/doctors/${uid}`);
 
-    // Set offline on disconnect
-    onDisconnect(statusRef).remove();
-    onDisconnect(doctRef).update({ status: 'INACTIVE', busy: false });
+    // Set initial status
+    update(doctRef, {
+        status: 'ACTIVE',
+        lastActiveTime: Date.now()
+    });
 
+    // Set to offline on disconnect
+    onDisconnect(statusRef).remove();
+    onDisconnect(doctRef).update({
+        status: 'INACTIVE',
+        busy: false
+    });
+
+    // Heartbeat every 10 seconds
     heartbeatInterval = setInterval(() => {
+        const now = Date.now();
+
         set(statusRef, {
-            lastActiveTime: Date.now(),
+            lastActiveTime: now,
             status: 'ACTIVE'
         });
+
         update(doctRef, {
             status: 'ACTIVE',
-            lastActiveTime: Date.now()
+            lastActiveTime: now
         });
+
+        // Update UI status
+        if (liveStatus) {
+            liveStatus.innerText = 'ONLINE';
+            liveStatus.className = 'status-indicator status-active';
+        }
+    }, 10000);
+
+    // Immediate first beat
+    if (liveStatus) {
         liveStatus.innerText = 'ONLINE';
         liveStatus.className = 'status-indicator status-active';
-    }, 10000); // 10s heartbeat
+    }
 }
 
-// Session Monitoring
+// Monitor Doctor's Session Assignment
 function monitorSessions(uid) {
+    console.log('Monitoring sessions for doctor:', uid);
+
+    // Listen for session assignment
     onValue(ref(db, `users/doctors/${uid}`), (snapshot) => {
         const data = snapshot.val();
-        if (data.activeSessionId) {
+        currentDoctorData = data;
+
+        if (data?.activeSessionId && data.activeSessionId !== currentSessionId) {
             currentSessionId = data.activeSessionId;
+            console.log('New session assigned:', currentSessionId);
             showConsultation(currentSessionId);
-        } else {
+        } else if (!data?.activeSessionId && currentSessionId) {
+            console.log('Session ended');
             currentSessionId = null;
             hideConsultation();
         }
     });
 }
 
+// Show Consultation UI
 function showConsultation(sid) {
-    noPatientView.classList.add('hidden');
-    activeConsultation.classList.remove('hidden');
+    console.log('Showing consultation:', sid);
+
+    if (noPatientView) noPatientView.classList.add('hidden');
+    if (activeConsultation) activeConsultation.classList.remove('hidden');
+
+    // Clear previous listeners
+    if (sessionListener) off(sessionListener);
+    if (chatListener) off(chatListener);
 
     // Load Session Data
-    onValue(ref(db, `sessions/${sid}`), (snap) => {
+    const sessionRef = ref(db, `sessions/${sid}`);
+    onValue(sessionRef, (snap) => {
         const session = snap.val();
-        if (session) {
-            document.getElementById('p-name').innerText = session.patientName + (session.emergency ? ' [EMERGENCY]' : '');
+        if (!session) return;
+
+        // Update patient info
+        const nameEl = document.getElementById('p-name');
+        if (nameEl) {
+            nameEl.innerText = session.patientName || 'Patient';
             if (session.emergency) {
-                document.getElementById('p-name').style.color = 'var(--danger)';
+                nameEl.innerText += ' [🚨 EMERGENCY]';
+                nameEl.style.color = '#ef4444';
             }
-            // Load health data
-            if (session.healthData) {
-                const hd = session.healthData;
-                document.getElementById('v-bp').innerText = hd.bp || '--';
-                document.getElementById('v-temp').innerText = hd.temp || '--';
-                document.getElementById('v-sugar').innerText = hd.sugar || '--';
-                document.getElementById('v-spo2').innerText = hd.spo2 || '--';
-            }
+        }
+
+        // Load patient details
+        if (session.patientId) {
+            get(ref(db, `users/patients/${session.patientId}`)).then(patientSnap => {
+                const patient = patientSnap.val();
+                if (patient) {
+                    const ageEl = document.getElementById('p-age');
+                    const bloodEl = document.getElementById('p-blood');
+                    if (ageEl) ageEl.innerText = patient.age || '--';
+                    if (bloodEl) bloodEl.innerText = patient.bloodGroup || '--';
+                }
+            });
+        }
+
+        // Load health data
+        if (session.healthData) {
+            const hd = session.healthData;
+            const bpEl = document.getElementById('v-bp');
+            const tempEl = document.getElementById('v-temp');
+            const sugarEl = document.getElementById('v-sugar');
+            const spo2El = document.getElementById('v-spo2');
+
+            if (bpEl) bpEl.innerText = hd.bp || '--';
+            if (tempEl) tempEl.innerText = hd.temp || '--';
+            if (sugarEl) sugarEl.innerText = hd.sugar || '--';
+            if (spo2El) spo2El.innerText = hd.spo2 || '--';
         }
     });
 
-    // Load Chat
-    onValue(ref(db, `sessions/${sid}/chat`), (snap) => {
+    // Load Chat Messages
+    const chatRef = ref(db, `sessions/${sid}/chat`);
+    onValue(chatRef, (snap) => {
+        if (!chatMessages) return;
+
         chatMessages.innerHTML = '';
         const msgs = snap.val() || {};
+
         Object.values(msgs).forEach(m => {
             const div = document.createElement('div');
-            div.className = `msg msg-${m.role === 'doctor' ? 'p' : 'd'}`; // Using same CSS classes
+            div.className = `msg msg-${m.role === 'doctor' ? 'd' : 'p'}`;
             div.innerText = m.text;
             chatMessages.appendChild(div);
         });
+
         chatMessages.scrollTop = chatMessages.scrollHeight;
     });
 }
 
+// Hide Consultation UI
 function hideConsultation() {
-    activeConsultation.classList.add('hidden');
-    noPatientView.classList.remove('hidden');
+    if (activeConsultation) activeConsultation.classList.add('hidden');
+    if (noPatientView) noPatientView.classList.remove('hidden');
+
+    // Clear chat
+    if (chatMessages) chatMessages.innerHTML = '';
 }
 
-// Chat Logic
-sendBtn?.addEventListener('click', sendMessage);
-chatInput?.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
-
+// Send Chat Message
 async function sendMessage() {
-    if (!chatInput.value.trim() || !currentSessionId) return;
-    const msgRef = push(ref(db, `sessions/${currentSessionId}/chat`));
-    await set(msgRef, {
-        role: 'doctor',
-        text: chatInput.value,
-        timestamp: Date.now()
-    });
-    chatInput.value = '';
-}
-
-// Session End
-endSessionBtn?.addEventListener('click', () => {
-    prescriptionModal.classList.remove('hidden');
-});
-
-confirmEndBtn?.addEventListener('click', async () => {
-    const text = document.getElementById('prescription-text').value;
-    if (!text) return alert("Please enter a prescription.");
+    const text = chatInput?.value?.trim();
+    if (!text || !currentSessionId) return;
 
     try {
-        // 1. Save prescription to Storage
-        const pRef = sRef(storage, `prescriptions/${currentSessionId}.txt`);
-        await uploadString(pRef, text);
-
-        // 2. Update Session
-        await update(ref(db, `sessions/${currentSessionId}`), {
-            endTime: Date.now(),
-            prescriptionLink: `prescriptions/${currentSessionId}.txt`
+        const msgRef = push(ref(db, `sessions/${currentSessionId}/chat`));
+        await set(msgRef, {
+            role: 'doctor',
+            text,
+            timestamp: Date.now()
         });
 
-        // 3. Free Doctor
+        if (chatInput) chatInput.value = '';
+    } catch (error) {
+        console.error('Send message error:', error);
+        alert('Failed to send message');
+    }
+}
+
+sendBtn?.addEventListener('click', sendMessage);
+chatInput?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendMessage();
+});
+
+// End Session - Show Prescription Modal
+endSessionBtn?.addEventListener('click', () => {
+    if (prescriptionModal) prescriptionModal.classList.remove('hidden');
+});
+
+// Close modal on outside click
+prescriptionModal?.addEventListener('click', (e) => {
+    if (e.target === prescriptionModal) {
+        prescriptionModal.classList.add('hidden');
+    }
+});
+
+// Confirm End Session - Save Prescription and Close
+confirmEndBtn?.addEventListener('click', async () => {
+    const prescriptionText = document.getElementById('prescription-text')?.value?.trim();
+
+    if (!prescriptionText) {
+        alert('Please enter a prescription before ending the session.');
+        return;
+    }
+
+    if (!currentSessionId) {
+        alert('No active session found.');
+        return;
+    }
+
+    const btn = confirmEndBtn;
+    const originalText = btn.innerText;
+
+    try {
+        btn.disabled = true;
+        btn.innerText = 'Saving...';
+
+        // 1. Save prescription to session
+        await update(ref(db, `sessions/${currentSessionId}`), {
+            prescription: prescriptionText,
+            endTime: Date.now(),
+            status: 'COMPLETED'
+        });
+
+        // 2. Try to save to storage (optional)
+        try {
+            const pRef = sRef(storage, `prescriptions/${currentSessionId}.txt`);
+            await uploadString(pRef, prescriptionText);
+
+            await update(ref(db, `sessions/${currentSessionId}`), {
+                prescriptionLink: `prescriptions/${currentSessionId}.txt`
+            });
+        } catch (storageError) {
+            console.warn('Storage upload failed (non-critical):', storageError);
+        }
+
+        // 3. Free the doctor
         await update(ref(db, `users/doctors/${currentDoctor.uid}`), {
             busy: false,
             activeSessionId: null
         });
 
-        prescriptionModal.classList.add('hidden');
-        alert("Session completed successfully.");
+        // 4. Hide modal
+        if (prescriptionModal) prescriptionModal.classList.add('hidden');
+
+        // 5. Clear prescription text
+        const textArea = document.getElementById('prescription-text');
+        if (textArea) textArea.value = '';
+
+        alert('Consultation completed successfully. Prescription sent to patient.');
+
+        // UI will update automatically via listener
+        currentSessionId = null;
+
     } catch (error) {
-        alert("Error ending session: " + error.message);
+        console.error('End session error:', error);
+        alert('Error ending session: ' + error.message);
+        btn.disabled = false;
+        btn.innerText = originalText;
     }
 });
 
-// Initialization
-window.addEventListener('auth-success', (e) => {
-    currentDoctor = e.detail;
-    document.getElementById('doctor-name').innerText = `Dr. ${currentDoctor.displayName || 'Practitioner'}`;
-    document.getElementById('doctor-id').innerText = `ID: ${currentDoctor.uid.substring(0, 8)}`;
+// Add cancel button handler
+const cancelPrescriptionBtn = document.getElementById('cancel-prescription-btn');
+cancelPrescriptionBtn?.addEventListener('click', () => {
+    if (prescriptionModal) prescriptionModal.classList.add('hidden');
+});
 
+// Initialize after auth success
+window.addEventListener('auth-success', async (e) => {
+    currentDoctor = e.detail;
+    console.log('Doctor authenticated:', currentDoctor.email);
+
+    // Get doctor data
+    const docSnap = await get(ref(db, `users/doctors/${currentDoctor.uid}`));
+    currentDoctorData = docSnap.val();
+
+    // Update UI
+    const nameEl = document.getElementById('doctor-name');
+    const idEl = document.getElementById('doctor-id');
+
+    if (nameEl) nameEl.innerText = `Dr. ${currentDoctorData?.name || currentDoctor.displayName || 'Practitioner'}`;
+    if (idEl) idEl.innerText = `ID: ${currentDoctor.uid.substring(0, 8)}`;
+
+    // Start heartbeat and session monitoring
     startHeartbeat(currentDoctor.uid);
     monitorSessions(currentDoctor.uid);
 });
