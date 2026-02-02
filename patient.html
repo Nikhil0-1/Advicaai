@@ -99,6 +99,14 @@
                 </div>
             </div>
 
+            <!-- Prescription History Section -->
+            <section id="history-section" class="patient-history">
+                <h3 style="margin-bottom:1rem;">📋 My Consultations</h3>
+                <div id="patient-history-list">
+                    <!-- JS populated -->
+                </div>
+            </section>
+
             <div id="action-section" class="centered">
                 <button id="consult-btn" class="btn btn-primary btn-large">
                     <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
@@ -193,6 +201,24 @@
             }
         }
     </script>
+
+    <!-- Prescription Modal -->
+    <div id="prescription-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>📋 Prescription</h2>
+            <div id="prescription-details">
+                <p><strong>Doctor:</strong> <span id="rx-doctor">--</span></p>
+                <p><strong>Date:</strong> <span id="rx-date">--</span></p>
+            </div>
+            <div id="prescription-content" class="prescription-box">
+                <!-- Prescription text here -->
+            </div>
+            <div class="modal-actions">
+                <button id="close-prescription-modal" class="btn btn-primary" style="width:100%;">Close</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="./scripts/patient.js"></script>
 </body>
 

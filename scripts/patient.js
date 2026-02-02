@@ -342,7 +342,7 @@ async function sendMessage() {
 }
 
 // Initialize after auth success
-window.addEventListener('auth-success', (e) => {
+window.addEventListener('auth-success', async (e) => {
     currentPatient = e.detail;
     console.log('Patient authenticated:', currentPatient.email);
 
@@ -361,4 +361,99 @@ window.addEventListener('auth-success', (e) => {
             if (bloodEl) bloodEl.innerText = profile.bloodGroup || '--';
         }
     });
+
+    // Load consultation history
+    await loadPatientHistory(currentPatient.uid);
+});
+
+// Load Patient's Consultation History
+async function loadPatientHistory(patientId) {
+    console.log('Loading patient history for:', patientId);
+
+    try {
+        const sessionsSnap = await get(ref(db, 'sessions'));
+        const allSessions = sessionsSnap.val() || {};
+
+        // Filter sessions for this patient
+        const patientSessions = Object.entries(allSessions)
+            .filter(([sid, session]) => session.patientId === patientId && session.endTime)
+            .sort((a, b) => (b[1].endTime || 0) - (a[1].endTime || 0))
+            .slice(0, 10); // Last 10 sessions
+
+        const historyList = document.getElementById('patient-history-list');
+        if (!historyList) return;
+
+        historyList.innerHTML = '';
+
+        if (patientSessions.length === 0) {
+            historyList.innerHTML = '<div class="no-history">No consultation history yet. Your past consultations will appear here.</div>';
+            return;
+        }
+
+        patientSessions.forEach(([sid, session]) => {
+            const div = document.createElement('div');
+            div.className = `history-card ${session.emergency ? 'emergency' : ''}`;
+
+            const date = new Date(session.startTime).toLocaleDateString('en-IN', {
+                day: '2-digit', month: 'short', year: 'numeric'
+            });
+
+            const prescriptionPreview = session.prescription
+                ? session.prescription.substring(0, 100) + (session.prescription.length > 100 ? '...' : '')
+                : 'No prescription';
+
+            div.innerHTML = `
+                <div class="history-card-header">
+                    <strong>Dr. ${session.doctorName || 'Doctor'}</strong>
+                    <span class="date">${date}</span>
+                </div>
+                <div class="history-card-body">
+                    ${session.emergency ? '<span style="color:var(--danger);font-size:0.8rem;">🚨 Emergency</span> ' : ''}
+                    <div class="prescription-preview">${prescriptionPreview}</div>
+                </div>
+            `;
+
+            // Click to view full prescription
+            div.addEventListener('click', () => showPrescription(session));
+
+            historyList.appendChild(div);
+        });
+
+    } catch (error) {
+        console.error('Error loading history:', error);
+    }
+}
+
+// Show prescription modal
+function showPrescription(session) {
+    const modal = document.getElementById('prescription-modal');
+    const doctorEl = document.getElementById('rx-doctor');
+    const dateEl = document.getElementById('rx-date');
+    const contentEl = document.getElementById('prescription-content');
+
+    if (!modal) return;
+
+    const date = new Date(session.endTime).toLocaleDateString('en-IN', {
+        day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+
+    if (doctorEl) doctorEl.innerText = `Dr. ${session.doctorName || 'Doctor'}`;
+    if (dateEl) dateEl.innerText = date;
+    if (contentEl) contentEl.innerText = session.prescription || 'No prescription available.';
+
+    modal.classList.remove('hidden');
+}
+
+// Close prescription modal
+const closePrescriptionModal = document.getElementById('close-prescription-modal');
+closePrescriptionModal?.addEventListener('click', () => {
+    const modal = document.getElementById('prescription-modal');
+    if (modal) modal.classList.add('hidden');
+});
+
+// Close modal on outside click
+document.getElementById('prescription-modal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'prescription-modal') {
+        e.target.classList.add('hidden');
+    }
 });
