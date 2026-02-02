@@ -49,8 +49,10 @@ body {
     background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0fdf4 100%);
     align-items: center;
     justify-content: center;
-    padding: 1rem;
+    padding: 2rem 1rem;
     gap: 1.5rem;
+    flex-wrap: wrap;
+    align-content: center;
 }
 
 .auth-brand {
@@ -166,10 +168,13 @@ body {
 
 .auth-card {
     max-width: 400px;
-    margin: auto;
     width: 90%;
     text-align: center;
     padding: 2rem 1.5rem;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
 .auth-card h1 {
