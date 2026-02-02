@@ -300,53 +300,53 @@ confirmEndBtn?.addEventListener('click', async () => {
 
     const btn = confirmEndBtn;
     const originalText = btn.innerText;
-    const sessionToEnd = currentSessionId;
 
     try {
         btn.disabled = true;
         btn.innerText = 'Saving...';
 
-        console.log('Ending session:', sessionToEnd);
-
-        // 1. Update session with prescription and end time
-        await update(ref(db, `sessions/${sessionToEnd}`), {
+        // 1. Save prescription to session
+        await update(ref(db, `sessions/${currentSessionId}`), {
             prescription: prescriptionText,
             endTime: Date.now(),
             status: 'COMPLETED'
         });
-        console.log('Session updated with prescription');
 
-        // 2. Free the doctor
-        if (currentDoctor?.uid) {
-            await update(ref(db, `users/doctors/${currentDoctor.uid}`), {
-                busy: false,
-                activeSessionId: null
+        // 2. Try to save to storage (optional)
+        try {
+            const pRef = sRef(storage, `prescriptions/${currentSessionId}.txt`);
+            await uploadString(pRef, prescriptionText);
+
+            await update(ref(db, `sessions/${currentSessionId}`), {
+                prescriptionLink: `prescriptions/${currentSessionId}.txt`
             });
-            console.log('Doctor freed');
+        } catch (storageError) {
+            console.warn('Storage upload failed (non-critical):', storageError);
         }
 
-        // 3. Hide modal
+        // 3. Free the doctor
+        await update(ref(db, `users/doctors/${currentDoctor.uid}`), {
+            busy: false,
+            activeSessionId: null
+        });
+
+        // 4. Hide modal
         if (prescriptionModal) prescriptionModal.classList.add('hidden');
 
-        // 4. Clear prescription text
+        // 5. Clear prescription text
         const textArea = document.getElementById('prescription-text');
         if (textArea) textArea.value = '';
 
-        // 5. Clear session ID
+        alert('Consultation completed successfully. Prescription sent to patient.');
+
+        // UI will update automatically via listener
         currentSessionId = null;
-
-        // 6. Show success
-        btn.disabled = false;
-        btn.innerText = originalText;
-
-        alert('Consultation completed! Prescription sent to patient.');
-
-        // 7. Refresh to show dashboard
-        hideConsultation();
 
     } catch (error) {
         console.error('End session error:', error);
-        alert('Error: ' + error.message);
+        alert('Error ending session: ' + error.message);
+    } finally {
+        // Always reset button state
         btn.disabled = false;
         btn.innerText = originalText;
     }

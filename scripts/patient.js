@@ -159,8 +159,16 @@ window.flagEmergency = flagEmergency;
 
 // Show Consultation UI
 function showConsultation(docName) {
-    actionSection?.classList.add('hidden');
-    consultationArea?.classList.remove('hidden');
+    // Hide all dashboard sections
+    const infoSection = document.getElementById('info-section');
+    const historySection = document.getElementById('history-section');
+
+    if (infoSection) infoSection.classList.add('hidden');
+    if (historySection) historySection.classList.add('hidden');
+    if (actionSection) actionSection.classList.add('hidden');
+
+    // Show consultation area
+    if (consultationArea) consultationArea.classList.remove('hidden');
     if (doctorNameEl) doctorNameEl.innerText = `Dr. ${docName}`;
 
     // Monitor chat messages
@@ -374,7 +382,25 @@ async function loadPatientHistory(patientId) {
         const sessionsSnap = await get(ref(db, 'sessions'));
         const allSessions = sessionsSnap.val() || {};
 
-        // Filter sessions for this patient
+        // 1. Check for ACTIVE session first
+        const activeSessionEntry = Object.entries(allSessions).find(([sid, session]) =>
+            session.patientId === patientId && session.status === 'ACTIVE' && !session.endTime
+        );
+
+        if (activeSessionEntry) {
+            const [sid, session] = activeSessionEntry;
+            console.log('Found active session, restoring view:', sid);
+            currentSessionId = sid;
+            assignedDoctorId = session.doctorId;
+
+            // Restore consultation UI
+            showConsultation(session.doctorName);
+
+            // Restart monitoring
+            startFailSafeWatcher(session.doctorId);
+        }
+
+        // 2. Filter past sessions for history
         const patientSessions = Object.entries(allSessions)
             .filter(([sid, session]) => session.patientId === patientId && session.endTime)
             .sort((a, b) => (b[1].endTime || 0) - (a[1].endTime || 0))
