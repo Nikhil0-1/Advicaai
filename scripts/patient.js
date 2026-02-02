@@ -359,10 +359,24 @@ async function loadPatientHistory(patientId) {
 
         if (activeEntry) {
             const [sid, session] = activeEntry;
-            console.log('Restoring active session:', sid);
+            console.log('Found active session:', sid);
             currentSessionId = sid;
-            showConsultation(session.doctorName);
-            startFailSafeWatcher(session.doctorId);
+            assignedDoctorId = session.doctorId;
+
+            // Don't auto-show consultation. Let user click button.
+            // Update "Consult Doctor" button to "Resume"
+            if (activeEntry && quickConsultBtn) {
+                quickConsultBtn.innerText = 'Resume Consultation';
+                quickConsultBtn.classList.remove('btn-primary');
+                quickConsultBtn.classList.add('btn-warning');
+
+                // Override click handler to resume instead of opening modal
+                quickConsultBtn.onclick = (e) => {
+                    e.stopImmediatePropagation();
+                    showConsultation(session.doctorName);
+                    startFailSafeWatcher(session.doctorId);
+                };
+            }
         }
 
         // 2. Populate History List
