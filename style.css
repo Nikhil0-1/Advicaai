@@ -1336,13 +1336,42 @@ td {
 
 .consult-header {
     background: white;
-    padding: 1rem;
-    border-radius: 12px;
-    box-shadow: var(--shadow);
-    margin-bottom: 1rem;
+    padding: 1rem 1.5rem;
+    border-radius: 16px;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    margin-bottom: 1.5rem;
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.btn-icon {
+    background: #f1f5f9;
+    border: none;
+    padding: 0.6rem;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--text-muted);
+    width: 42px;
+    height: 42px;
+}
+
+.btn-icon:hover {
+    background: var(--primary-light);
+    color: var(--primary);
+    transform: scale(1.05);
+}
+
+.btn-icon svg {
+    width: 24px;
+    height: 24px;
 }
 
 .consult-grid {

@@ -25,6 +25,12 @@ const consultModal = document.getElementById('consult-modal');
 const confirmConsultBtn = document.getElementById('confirm-consult');
 const cancelConsultBtn = document.getElementById('cancel-consult');
 const consultSymptomsInput = document.getElementById('consult-symptoms');
+const minimizeConsultBtn = document.getElementById('minimize-consult-btn');
+
+// Minimize Consultation (Back Button)
+minimizeConsultBtn?.addEventListener('click', () => {
+    consultationArea.classList.add('hidden');
+});
 
 // Ensure hidden on load
 if (consultationArea) consultationArea.classList.add('hidden');
