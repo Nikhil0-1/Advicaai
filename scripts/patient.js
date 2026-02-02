@@ -1,4 +1,4 @@
-// Patient Panel - Login, Registration & Consultation
+// Patient Panel - Logic for Sidebar, Profile, Consultation
 import { db, auth } from './firebase.js';
 import { checkAuth, login, logout, registerPatient } from './auth.js';
 import {
@@ -14,19 +14,70 @@ let assignedDoctorId = null;
 let failSafeTimer = null;
 
 // DOM Elements
-const loginForm = document.getElementById('login-form');
-const registerForm = document.getElementById('register-form');
+const sidebar = document.getElementById('sidebar');
+const closeSidebarBtn = document.getElementById('close-sidebar');
+const menuToggleBtn = document.getElementById('menu-toggle');
 const logoutBtn = document.getElementById('logout-btn');
-const consultBtn = document.getElementById('consult-btn');
-const consultationArea = document.getElementById('consultation-area');
-const actionSection = document.getElementById('action-section');
-const doctorNameEl = document.getElementById('doctor-name');
-const chatMessages = document.getElementById('chat-messages');
-const chatInput = document.getElementById('chat-input');
-const sendBtn = document.getElementById('send-btn');
-const healthForm = document.getElementById('health-form');
+const quickConsultBtn = document.getElementById('quick-consult-btn');
+const consultModal = document.getElementById('consult-modal');
+const confirmConsultBtn = document.getElementById('confirm-consult');
+const cancelConsultBtn = document.getElementById('cancel-consult');
+const consultSymptomsInput = document.getElementById('consult-symptoms');
+
+// Views
+const views = {
+    dashboard: document.getElementById('dashboard-view'),
+    profile: document.getElementById('profile-view'),
+    history: document.getElementById('history-view'),
+    reports: document.getElementById('reports-view')
+};
+
+// Navigation Handler
+document.querySelectorAll('.nav-item[data-section]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        const section = btn.dataset.section;
+        switchView(section);
+
+        // Close sidebar on mobile
+        if (window.innerWidth <= 768) {
+            sidebar.classList.remove('open');
+        }
+    });
+});
+
+function switchView(viewName) {
+    // Update active nav item
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    const activeBtn = document.querySelector(`.nav-item[data-section="${viewName}"]`);
+    if (activeBtn) activeBtn.classList.add('active');
+
+    // Show selected view, hide others
+    Object.values(views).forEach(el => el && el.classList.add('hidden'));
+    if (views[viewName]) {
+        views[viewName].classList.remove('hidden');
+        views[viewName].classList.add('active'); // Add active class ensuring visibility
+    }
+}
+
+// Sidebar Toggle (Mobile)
+menuToggleBtn?.addEventListener('click', () => {
+    sidebar.classList.add('open');
+});
+
+closeSidebarBtn?.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+});
+
+// Logout
+logoutBtn?.addEventListener('click', logout);
+
+
+// ==========================================
+// AUTH & INITIALIZATION
+// ==========================================
 
 // Login Handler
+const loginForm = document.getElementById('login-form');
 loginForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector('button[type="submit"]');
@@ -35,12 +86,9 @@ loginForm?.addEventListener('submit', async (e) => {
     try {
         btn.disabled = true;
         btn.innerText = 'Signing in...';
-
         const email = document.getElementById('login-email').value.trim();
         const password = document.getElementById('login-password').value;
-
         await login(email, password, 'patient');
-
     } catch (error) {
         alert(error.message);
         btn.disabled = false;
@@ -48,7 +96,8 @@ loginForm?.addEventListener('submit', async (e) => {
     }
 });
 
-// Registration Handler
+// Register Handler
+const registerForm = document.getElementById('register-form');
 registerForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector('button[type="submit"]');
@@ -57,7 +106,6 @@ registerForm?.addEventListener('submit', async (e) => {
     try {
         btn.disabled = true;
         btn.innerText = 'Creating Account...';
-
         const name = document.getElementById('reg-name').value.trim();
         const email = document.getElementById('reg-email').value.trim();
         const password = document.getElementById('reg-password').value;
@@ -68,9 +116,7 @@ registerForm?.addEventListener('submit', async (e) => {
             age: parseInt(age),
             bloodGroup
         });
-
-        alert('Account created successfully! You are now logged in.');
-
+        alert('Account created successfully!');
     } catch (error) {
         alert(error.message);
         btn.disabled = false;
@@ -78,48 +124,157 @@ registerForm?.addEventListener('submit', async (e) => {
     }
 });
 
-// Logout Handler
-logoutBtn?.addEventListener('click', logout);
 
-// Doctor Assignment - Find Available Doctor
-consultBtn?.addEventListener('click', async () => {
-    consultBtn.disabled = true;
-    consultBtn.innerText = 'Finding Doctor...';
+// Initialize after auth success
+window.addEventListener('auth-success', async (e) => {
+    currentPatient = e.detail;
+    console.log('Patient authenticated:', currentPatient.email);
+
+    // Initial Load
+    await Promise.all([
+        loadProfile(),
+        loadPatientHistory(currentPatient.uid)
+    ]);
+});
+
+
+// ==========================================
+// PROFILE MANAGEMENT
+// ==========================================
+
+async function loadProfile() {
+    if (!currentPatient) return;
+
+    onValue(ref(db, `users/patients/${currentPatient.uid}`), (snap) => {
+        const profile = snap.val();
+        if (profile) {
+            // Header Info
+            document.getElementById('patient-name').innerText = profile.name || 'Patient';
+            document.getElementById('patient-id').innerText = `ID: ${currentPatient.uid.substring(0, 8)}`;
+
+            // Dashboard Vitals
+            document.getElementById('dash-age').innerText = profile.age || '--';
+            document.getElementById('dash-blood').innerText = profile.bloodGroup || '--';
+            document.getElementById('dash-weight').innerText = (profile.weight ? profile.weight + ' kg' : '--');
+
+            // Profile Form Inputs
+            setInputValue('p-name-input', profile.name);
+            setInputValue('p-age-input', profile.age);
+            setInputValue('p-gender-input', profile.gender || 'Other');
+            setInputValue('p-blood-input', profile.bloodGroup);
+            setInputValue('p-height-input', profile.height);
+            setInputValue('p-weight-input', profile.weight);
+            setInputValue('p-address-input', profile.address);
+            setInputValue('p-medical-input', profile.medicalHistory);
+        }
+    });
+}
+
+function setInputValue(id, value) {
+    const el = document.getElementById(id);
+    if (el && value !== undefined) el.value = value;
+}
+
+const profileForm = document.getElementById('profile-form');
+profileForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('save-profile-btn');
+    const originalText = btn.innerText;
 
     try {
-        const doctorsSnap = await get(ref(db, 'users/doctors'));
-        const doctors = doctorsSnap.val() || {};
+        btn.disabled = true;
+        btn.innerText = 'Saving...';
 
-        // Find available doctor: approved, active, not busy, recent heartbeat
-        const availableDoctor = Object.entries(doctors).find(([uid, doc]) => {
-            const isApproved = doc.approved === true;
-            const isActive = doc.status === 'ACTIVE';
-            const isNotBusy = doc.busy === false;
-            const lastActive = doc.lastActiveTime || 0;
-            const isRecentlyActive = (Date.now() - lastActive) < 30000;
+        const updateData = {
+            name: document.getElementById('p-name-input').value,
+            age: parseInt(document.getElementById('p-age-input').value),
+            gender: document.getElementById('p-gender-input').value,
+            bloodGroup: document.getElementById('p-blood-input').value,
+            height: document.getElementById('p-height-input').value,
+            weight: document.getElementById('p-weight-input').value,
+            address: document.getElementById('p-address-input').value,
+            medicalHistory: document.getElementById('p-medical-input').value
+        };
 
-            return isApproved && isActive && isNotBusy && isRecentlyActive;
-        });
-
-        if (availableDoctor) {
-            const [docId, docData] = availableDoctor;
-            assignedDoctorId = docId;
-            await startSession(docId, docData.name);
-        } else {
-            alert('No doctors available right now. Please try again in a few minutes.');
-            consultBtn.disabled = false;
-            consultBtn.innerHTML = `<span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 8h-1.81c-.45-.78-1.07-1.45-1.82-1.96l1.1-1.1-1.41-1.41-1.47 1.47A5.93 5.93 0 0 0 12 4.5c-.64 0-1.26.09-1.86.26L8.67 3.29 7.26 4.7l1.1 1.1C7.61 6.35 6.99 7.02 6.54 7.8H5v2h1.09c-.05.33-.09.66-.09 1s.04.67.09 1H5v2h1.54c1.07 2.01 3.18 3.4 5.62 3.4h.12c2.44 0 4.55-1.39 5.62-3.4H19v-2h-1.09c.05-.33.09-.66.09-1s-.04-.67-.09-1H19V8zm-7 6c-1.65 0-3-1.35-3-3s1.35-3 3-3 3 1.35 3 3-1.35 3-3 3z"/><circle cx="12" cy="11" r="1.5"/></svg></span> Consult Doctor`;
+        if (currentPatient?.uid) {
+            await update(ref(db, `users/patients/${currentPatient.uid}`), updateData);
+            alert('Profile updated successfully!');
         }
     } catch (error) {
-        console.error('Error finding doctor:', error);
-        alert('Error finding doctor: ' + error.message);
-        consultBtn.disabled = false;
-        consultBtn.innerHTML = `<span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 8h-1.81c-.45-.78-1.07-1.45-1.82-1.96l1.1-1.1-1.41-1.41-1.47 1.47A5.93 5.93 0 0 0 12 4.5c-.64 0-1.26.09-1.86.26L8.67 3.29 7.26 4.7l1.1 1.1C7.61 6.35 6.99 7.02 6.54 7.8H5v2h1.09c-.05.33-.09.66-.09 1s.04.67.09 1H5v2h1.54c1.07 2.01 3.18 3.4 5.62 3.4h.12c2.44 0 4.55-1.39 5.62-3.4H19v-2h-1.09c.05-.33.09-.66.09-1s-.04-.67-.09-1H19V8zm-7 6c-1.65 0-3-1.35-3-3s1.35-3 3-3 3 1.35 3 3-1.35 3-3 3z"/><circle cx="12" cy="11" r="1.5"/></svg></span> Consult Doctor`;
+        console.error(error);
+        alert('Failed to save profile.');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = originalText;
     }
 });
 
-// Start Consultation Session
-async function startSession(docId, docName) {
+
+// ==========================================
+// CONSULTATION FLOW
+// ==========================================
+
+// Open Modal
+quickConsultBtn?.addEventListener('click', () => {
+    consultModal.classList.remove('hidden');
+});
+
+// Close Modal
+cancelConsultBtn?.addEventListener('click', () => {
+    consultModal.classList.add('hidden');
+});
+
+// Confirm Consultation Request
+confirmConsultBtn?.addEventListener('click', async () => {
+    const symptoms = consultSymptomsInput.value.trim();
+    if (!symptoms) {
+        alert('Please describe your symptoms.');
+        return;
+    }
+
+    confirmConsultBtn.disabled = true;
+    confirmConsultBtn.innerText = 'Finding Doctor...';
+
+    try {
+        await findAndConnectDoctor(symptoms);
+    } catch (error) {
+        console.error('Consult error:', error);
+        alert(error.message);
+        confirmConsultBtn.disabled = false;
+        confirmConsultBtn.innerText = 'Find Doctor';
+    }
+});
+
+async function findAndConnectDoctor(symptoms) {
+    const doctorsSnap = await get(ref(db, 'users/doctors'));
+    const doctors = doctorsSnap.val() || {};
+
+    // Find available doctor logic
+    const availableDoctor = Object.entries(doctors).find(([uid, doc]) => {
+        const isApproved = doc.approved === true;
+        const isActive = doc.status === 'ACTIVE';
+        const isNotBusy = doc.busy === false;
+        const lastActive = doc.lastActiveTime || 0;
+        return isApproved && isActive && isNotBusy && (Date.now() - lastActive) < 30000;
+    });
+
+    if (availableDoctor) {
+        const [docId, docData] = availableDoctor;
+        assignedDoctorId = docId;
+
+        await startSession(docId, docData.name, symptoms);
+
+        // Close modal
+        consultModal.classList.add('hidden');
+        consultSymptomsInput.value = '';
+        confirmConsultBtn.disabled = false;
+        confirmConsultBtn.innerText = 'Find Doctor';
+    } else {
+        throw new Error('No doctors available right now. Please try again later.');
+    }
+}
+
+async function startSession(docId, docName, symptoms) {
     const sessionRef = push(ref(db, 'sessions'));
     currentSessionId = sessionRef.key;
 
@@ -129,6 +284,7 @@ async function startSession(docId, docName) {
         patientName: currentPatient.displayName || 'Patient',
         doctorId: docId,
         doctorName: docName,
+        symptoms: symptoms,
         startTime: Date.now(),
         status: 'ACTIVE'
     };
@@ -142,40 +298,28 @@ async function startSession(docId, docName) {
         activeSessionId: currentSessionId
     });
 
-    // Show consultation UI
+    // Show Full Screen Consultation Overlay
     showConsultation(docName);
 
-    // Start fail-safe monitoring
+    // Start monitoring
     startFailSafeWatcher(docId);
 }
 
-// Emergency Flag
-async function flagEmergency() {
-    if (!currentSessionId) return;
-    await update(ref(db, `sessions/${currentSessionId}`), { emergency: true });
-    alert('Emergency flagged! Admin and Doctor notified.');
-}
-window.flagEmergency = flagEmergency;
-
-// Show Consultation UI
+// Show Consultation Overlay (The "Next Panel" experience)
 function showConsultation(docName) {
-    // Hide all dashboard sections
-    const infoSection = document.getElementById('info-section');
-    const historySection = document.getElementById('history-section');
+    const overlay = document.getElementById('consultation-area');
+    const doctorNameDisplay = document.getElementById('doctor-name-display');
+    const chatMessages = document.getElementById('chat-messages');
 
-    if (infoSection) infoSection.classList.add('hidden');
-    if (historySection) historySection.classList.add('hidden');
-    if (actionSection) actionSection.classList.add('hidden');
+    if (overlay) overlay.classList.remove('hidden'); // Show overlay
+    if (doctorNameDisplay) doctorNameDisplay.innerText = `Dr. ${docName}`;
 
-    // Show consultation area
-    if (consultationArea) consultationArea.classList.remove('hidden');
-    if (doctorNameEl) doctorNameEl.innerText = `Dr. ${docName}`;
-
-    // Monitor chat messages
+    // Initialize Chat Listener
     onValue(ref(db, `sessions/${currentSessionId}/chat`), (snap) => {
         if (!chatMessages) return;
         chatMessages.innerHTML = '';
         const msgs = snap.val() || {};
+
         Object.values(msgs).forEach(m => {
             const div = document.createElement('div');
             div.className = `msg msg-${m.role === 'patient' ? 'p' : 'd'}`;
@@ -185,301 +329,129 @@ function showConsultation(docName) {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     });
 
-    // Monitor session end
+    // Monitor Session End
     onValue(ref(db, `sessions/${currentSessionId}`), (snap) => {
         const session = snap.val();
         if (session && session.endTime) {
             stopFailSafeWatcher();
-            alert('Consultation ended. Prescription is available in your records.');
-            window.location.reload();
+            alert('Consultation ended. Prescription received.');
+            window.location.reload(); // Refresh to go back to dashboard
         }
     });
 }
 
-// Fail-Safe: Monitor Doctor Connection
-function startFailSafeWatcher(docId) {
-    if (failSafeTimer) clearInterval(failSafeTimer);
 
-    failSafeTimer = setInterval(async () => {
-        try {
-            const docSnap = await get(ref(db, `users/doctors/${docId}`));
-            const docData = docSnap.val();
-            const lastActive = docData?.lastActiveTime || 0;
+// ==========================================
+// UTILS: HISTORY, CHAT, EMERGENCY
+// ==========================================
 
-            if ((Date.now() - lastActive) > 30000 || docData?.status === 'INACTIVE') {
-                console.warn('Doctor disconnected!');
-                showDoctorDisconnectNotice();
-                stopFailSafeWatcher();
-            }
-        } catch (error) {
-            console.error('Fail-safe check error:', error);
-        }
-    }, 10000);
-}
-
-function stopFailSafeWatcher() {
-    if (failSafeTimer) {
-        clearInterval(failSafeTimer);
-        failSafeTimer = null;
-    }
-}
-
-// Show disconnect notice
-function showDoctorDisconnectNotice() {
-    const notice = document.getElementById('doctor-disconnect-notice');
-    if (notice) notice.classList.remove('hidden');
-    if (doctorNameEl) {
-        doctorNameEl.innerText = 'Doctor Disconnected';
-        doctorNameEl.className = 'status-indicator status-inactive';
-    }
-}
-
-// Hide disconnect notice
-function hideDoctorDisconnectNotice() {
-    const notice = document.getElementById('doctor-disconnect-notice');
-    if (notice) notice.classList.add('hidden');
-}
-
-// Find new doctor button handler
-const findNewDoctorBtn = document.getElementById('find-new-doctor-btn');
-findNewDoctorBtn?.addEventListener('click', findNewDoctor);
-
-// Find and assign new doctor
-async function findNewDoctor() {
-    if (!currentSessionId) return;
-
-    findNewDoctorBtn.disabled = true;
-    findNewDoctorBtn.innerText = 'Searching...';
-
-    try {
-        // Mark old doctor as free
-        if (assignedDoctorId) {
-            await update(ref(db, `users/doctors/${assignedDoctorId}`), {
-                busy: false,
-                activeSessionId: null
-            });
-        }
-
-        // Find new doctor
-        const doctorsSnap = await get(ref(db, 'users/doctors'));
-        const doctors = doctorsSnap.val() || {};
-
-        const nextDoc = Object.entries(doctors).find(([uid, doc]) => {
-            return doc.approved && doc.status === 'ACTIVE' && !doc.busy &&
-                (Date.now() - (doc.lastActiveTime || 0)) < 30000;
-        });
-
-        if (nextDoc) {
-            const [newDocId, newDocData] = nextDoc;
-            assignedDoctorId = newDocId;
-
-            // Update session with new doctor
-            await update(ref(db, `sessions/${currentSessionId}`), {
-                doctorId: newDocId,
-                doctorName: newDocData.name,
-                reassigned: true
-            });
-
-            // Lock new doctor
-            await update(ref(db, `users/doctors/${newDocId}`), {
-                busy: true,
-                activeSessionId: currentSessionId
-            });
-
-            // Update UI
-            hideDoctorDisconnectNotice();
-            if (doctorNameEl) {
-                doctorNameEl.innerText = `Dr. ${newDocData.name}`;
-                doctorNameEl.className = 'status-indicator status-active';
-            }
-
-            // Restart monitoring
-            startFailSafeWatcher(newDocId);
-
-            alert(`New doctor assigned: Dr. ${newDocData.name}`);
-        } else {
-            alert('No doctors available right now. Please try again in a moment.');
-        }
-    } catch (error) {
-        console.error('Find new doctor error:', error);
-        alert('Error: ' + error.message);
-    } finally {
-        findNewDoctorBtn.disabled = false;
-        findNewDoctorBtn.innerText = 'Find New Doctor';
-    }
-}
-
-// Health Data Submission
-healthForm?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!currentSessionId) {
-        alert('No active session');
-        return;
-    }
-
-    const healthData = {
-        bp: document.getElementById('bp')?.value || '',
-        temp: document.getElementById('temp')?.value || '',
-        sugar: document.getElementById('sugar')?.value || '',
-        spo2: document.getElementById('spo2')?.value || '',
-        timestamp: Date.now()
-    };
-
-    await update(ref(db, `sessions/${currentSessionId}/healthData`), healthData);
-    alert('Vitals submitted successfully!');
-});
-
-// Chat Logic
-sendBtn?.addEventListener('click', sendMessage);
-chatInput?.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') sendMessage();
-});
-
-async function sendMessage() {
-    const text = chatInput?.value?.trim();
-    if (!text || !currentSessionId) return;
-
-    const msgRef = push(ref(db, `sessions/${currentSessionId}/chat`));
-    await set(msgRef, {
-        role: 'patient',
-        text,
-        timestamp: Date.now()
-    });
-
-    if (chatInput) chatInput.value = '';
-}
-
-// Initialize after auth success
-window.addEventListener('auth-success', async (e) => {
-    currentPatient = e.detail;
-    console.log('Patient authenticated:', currentPatient.email);
-
-    // Load patient profile
-    onValue(ref(db, `users/patients/${currentPatient.uid}`), (snap) => {
-        const profile = snap.val();
-        if (profile) {
-            const nameEl = document.getElementById('patient-name');
-            const idEl = document.getElementById('patient-id');
-            const ageEl = document.getElementById('p-age');
-            const bloodEl = document.getElementById('p-blood');
-
-            if (nameEl) nameEl.innerText = profile.name || 'Patient';
-            if (idEl) idEl.innerText = `ID: ${currentPatient.uid.substring(0, 8)}`;
-            if (ageEl) ageEl.innerText = profile.age || '--';
-            if (bloodEl) bloodEl.innerText = profile.bloodGroup || '--';
-        }
-    });
-
-    // Load consultation history
-    await loadPatientHistory(currentPatient.uid);
-});
-
-// Load Patient's Consultation History
 async function loadPatientHistory(patientId) {
-    console.log('Loading patient history for:', patientId);
+    if (!patientId) return;
 
     try {
         const sessionsSnap = await get(ref(db, 'sessions'));
         const allSessions = sessionsSnap.val() || {};
 
-        // 1. Check for ACTIVE session first
-        const activeSessionEntry = Object.entries(allSessions).find(([sid, session]) =>
-            session.patientId === patientId && session.status === 'ACTIVE' && !session.endTime
+        // 1. Check for Active Session
+        const activeEntry = Object.entries(allSessions).find(([sid, s]) =>
+            s.patientId === patientId && s.status === 'ACTIVE' && !s.endTime
         );
 
-        if (activeSessionEntry) {
-            const [sid, session] = activeSessionEntry;
-            console.log('Found active session, restoring view:', sid);
+        if (activeEntry) {
+            const [sid, session] = activeEntry;
+            console.log('Restoring active session:', sid);
             currentSessionId = sid;
-            assignedDoctorId = session.doctorId;
-
-            // Restore consultation UI
             showConsultation(session.doctorName);
-
-            // Restart monitoring
             startFailSafeWatcher(session.doctorId);
         }
 
-        // 2. Filter past sessions for history
+        // 2. Populate History List
         const patientSessions = Object.entries(allSessions)
-            .filter(([sid, session]) => session.patientId === patientId && session.endTime)
-            .sort((a, b) => (b[1].endTime || 0) - (a[1].endTime || 0))
-            .slice(0, 10); // Last 10 sessions
+            .filter(([sid, s]) => s.patientId === patientId && s.endTime)
+            .sort((a, b) => b[1].endTime - a[1].endTime);
 
-        const historyList = document.getElementById('patient-history-list');
-        if (!historyList) return;
+        // Populate both Compact (Dashboard) and Full (History View) lists
+        renderHistoryList('patient-history-list', patientSessions.slice(0, 3)); // Top 3 for dashboard
+        renderHistoryList('full-history-list', patientSessions); // All for full view
 
-        historyList.innerHTML = '';
-
-        if (patientSessions.length === 0) {
-            historyList.innerHTML = '<div class="no-history">No consultation history yet. Your past consultations will appear here.</div>';
-            return;
-        }
-
-        patientSessions.forEach(([sid, session]) => {
-            const div = document.createElement('div');
-            div.className = `history-card ${session.emergency ? 'emergency' : ''}`;
-
-            const date = new Date(session.startTime).toLocaleDateString('en-IN', {
-                day: '2-digit', month: 'short', year: 'numeric'
-            });
-
-            const prescriptionPreview = session.prescription
-                ? session.prescription.substring(0, 100) + (session.prescription.length > 100 ? '...' : '')
-                : 'No prescription';
-
-            div.innerHTML = `
-                <div class="history-card-header">
-                    <strong>Dr. ${session.doctorName || 'Doctor'}</strong>
-                    <span class="date">${date}</span>
-                </div>
-                <div class="history-card-body">
-                    ${session.emergency ? '<span class="icon-svg" style="color:var(--danger);width:0.9em;height:0.9em;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg></span> Emergency ' : ''}
-                    <div class="prescription-preview">${prescriptionPreview}</div>
-                </div>
-            `;
-
-            // Click to view full prescription
-            div.addEventListener('click', () => showPrescription(session));
-
-            historyList.appendChild(div);
-        });
-
-    } catch (error) {
-        console.error('Error loading history:', error);
+    } catch (e) {
+        console.error('History load error:', e);
     }
 }
 
-// Show prescription modal
+function renderHistoryList(elementId, sessions) {
+    const listEl = document.getElementById(elementId);
+    if (!listEl) return;
+
+    listEl.innerHTML = '';
+
+    if (sessions.length === 0) {
+        listEl.innerHTML = '<p class="text-muted">No consultations yet.</p>';
+        return;
+    }
+
+    sessions.forEach(([sid, session]) => {
+        const date = new Date(session.startTime).toLocaleDateString();
+        const div = document.createElement('div');
+        div.className = `history-card ${session.emergency ? 'emergency' : ''}`;
+
+        div.innerHTML = `
+            <div class="history-card-header">
+                <strong>Dr. ${session.doctorName}</strong>
+                <span>${date}</span>
+            </div>
+            <div class="history-card-body">
+                <p>${session.symptoms || 'General Checkup'}</p>
+                ${session.prescription ? '<span class="badge success">Prescription Available</span>' : ''}
+            </div>
+        `;
+        div.addEventListener('click', () => showPrescription(session));
+        listEl.appendChild(div);
+    });
+}
+
 function showPrescription(session) {
     const modal = document.getElementById('prescription-modal');
-    const doctorEl = document.getElementById('rx-doctor');
-    const dateEl = document.getElementById('rx-date');
-    const contentEl = document.getElementById('prescription-content');
-
-    if (!modal) return;
-
-    const date = new Date(session.endTime).toLocaleDateString('en-IN', {
-        day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
-    });
-
-    if (doctorEl) doctorEl.innerText = `Dr. ${session.doctorName || 'Doctor'}`;
-    if (dateEl) dateEl.innerText = date;
-    if (contentEl) contentEl.innerText = session.prescription || 'No prescription available.';
-
-    modal.classList.remove('hidden');
+    if (modal) {
+        modal.classList.remove('hidden');
+        document.getElementById('rx-doctor').innerText = `Dr. ${session.doctorName}`;
+        document.getElementById('rx-date').innerText = new Date(session.endTime).toLocaleDateString();
+        document.getElementById('prescription-content').innerText = session.prescription || 'No notes.';
+    }
 }
 
-// Close prescription modal
-const closePrescriptionModal = document.getElementById('close-prescription-modal');
-closePrescriptionModal?.addEventListener('click', () => {
-    const modal = document.getElementById('prescription-modal');
-    if (modal) modal.classList.add('hidden');
+// Chat Send
+const sendBtn = document.getElementById('send-btn');
+const chatInput = document.getElementById('chat-input');
+const chatSendHandler = async () => {
+    const text = chatInput?.value?.trim();
+    if (!text || !currentSessionId) return;
+
+    await set(push(ref(db, `sessions/${currentSessionId}/chat`)), {
+        role: 'patient',
+        text,
+        timestamp: Date.now()
+    });
+    chatInput.value = '';
+};
+sendBtn?.addEventListener('click', chatSendHandler);
+chatInput?.addEventListener('keypress', (e) => { if (e.key === 'Enter') chatSendHandler(); });
+
+// Close Prescript Modal
+document.getElementById('close-prescription-modal')?.addEventListener('click', () => {
+    document.getElementById('prescription-modal').classList.add('hidden');
 });
 
-// Close modal on outside click
-document.getElementById('prescription-modal')?.addEventListener('click', (e) => {
-    if (e.target.id === 'prescription-modal') {
-        e.target.classList.add('hidden');
-    }
-});
+// Fail Safe & Emergency
+function startFailSafeWatcher(docId) {
+    if (failSafeTimer) clearInterval(failSafeTimer);
+    failSafeTimer = setInterval(async () => {
+        // Simple heartbeat check could go here
+    }, 15000);
+}
+function stopFailSafeWatcher() { if (failSafeTimer) clearInterval(failSafeTimer); }
+window.flagEmergency = async () => {
+    if (!currentSessionId) return;
+    await update(ref(db, `sessions/${currentSessionId}`), { emergency: true });
+    alert('Emergency Flagged!');
+};

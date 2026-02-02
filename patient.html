@@ -74,146 +74,270 @@
         </div>
     </div>
 
-    <div id="main-panel" class="panel-container hidden">
-        <header class="panel-header">
-            <div class="user-info">
-                <span class="avatar">P</span>
-                <div>
-                    <h2 id="patient-name">Loading...</h2>
-                    <span id="patient-id" class="badge">ID: --</span>
-                </div>
-            </div>
-            <button id="logout-btn" class="btn btn-outline">Logout</button>
-        </header>
-
-        <main class="content">
-            <div id="info-section">
-                <div class="card info-card">
-                    <h3>Personal Information</h3>
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <label>Age</label>
-                            <span id="p-age">--</span>
-                        </div>
-                        <div class="info-item">
-                            <label>Blood Group</label>
-                            <span id="p-blood">--</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Prescription History Section -->
-            <section id="history-section" class="patient-history">
-                <h3 style="margin-bottom:1rem;"><span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 24 24" fill="currentColor">
-                            <path
-                                d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" />
-                        </svg></span> My Consultations</h3>
-                <div id="patient-history-list">
-                    <!-- JS populated -->
-                </div>
-            </section>
-
-            <div id="action-section" class="centered">
-                <button id="consult-btn" class="btn btn-primary btn-large">
-                    <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                            fill="currentColor">
-                            <path
-                                d="M19 8h-1.81c-.45-.78-1.07-1.45-1.82-1.96l1.1-1.1-1.41-1.41-1.47 1.47A5.93 5.93 0 0 0 12 4.5c-.64 0-1.26.09-1.86.26L8.67 3.29 7.26 4.7l1.1 1.1C7.61 6.35 6.99 7.02 6.54 7.8H5v2h1.09c-.05.33-.09.66-.09 1s.04.67.09 1H5v2h1.54c1.07 2.01 3.18 3.4 5.62 3.4h.12c2.44 0 4.55-1.39 5.62-3.4H19v-2h-1.09c.05-.33.09-.66.09-1s-.04-.67-.09-1H19V8zm-7 6c-1.65 0-3-1.35-3-3s1.35-3 3-3 3 1.35 3 3-1.35 3-3 3z" />
-                            <circle cx="12" cy="11" r="1.5" />
-                        </svg></span> Consult Doctor
+    <!-- Main Panel with Sidebar Layout -->
+    <div id="main-panel" class="app-layout hidden">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-sm">A</div>
+                <span class="brand-sm">ADVICA</span>
+                <button id="close-sidebar" class="btn-icon mobile-only">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                    </svg>
                 </button>
             </div>
 
-            <div id="consultation-area" class="hidden">
-                <div id="doctor-disconnect-notice" class="disconnect-notice hidden">
-                    <span><span class="icon-svg" style="color:var(--warning);"><svg xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
-                            </svg></span> Doctor disconnected!</span>
-                    <button id="find-new-doctor-btn" class="btn btn-primary btn-sm">Find New Doctor</button>
-                </div>
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-section="dashboard">
+                    <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                            fill="currentColor">
+                            <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
+                        </svg></span>
+                    Dashboard
+                </button>
+                <button class="nav-item" data-section="profile">
+                    <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                            fill="currentColor">
+                            <path
+                                d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                        </svg></span>
+                    My Profile
+                </button>
+                <button class="nav-item" data-section="history">
+                    <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                            fill="currentColor">
+                            <path
+                                d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z" />
+                        </svg></span>
+                    Medical History
+                </button>
+                <button class="nav-item" data-section="reports">
+                    <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                            fill="currentColor">
+                            <path
+                                d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
+                        </svg></span>
+                    My Reports
+                </button>
+                <hr style="margin: 1rem 0; border:0; border-top:1px solid #e2e8f0; width:100%;">
+                <button id="logout-btn" class="nav-item logout">
+                    <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                            fill="currentColor">
+                            <path
+                                d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" />
+                        </svg></span>
+                    Logout
+                </button>
+            </nav>
+        </aside>
 
-                <div class="consultation-header">
-                    <h3>Live Consultation</h3>
-                    <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
-                        <span id="doctor-name" class="status-indicator status-active">Assigning...</span>
-                        <button onclick="window.flagEmergency()" class="btn btn-danger btn-sm"><span
-                                class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                                    fill="currentColor">
-                                    <path
-                                        d="M12 2L1 21h22L12 2zm0 4l7.53 13H4.47L12 6zm-1 5v4h2v-4h-2zm0 6v2h2v-2h-2z" />
-                                </svg></span> Emergency</button>
+        <main class="main-content">
+            <header class="top-header">
+                <button id="menu-toggle" class="btn-icon mobile-only">
+                    <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                            fill="currentColor">
+                            <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+                        </svg></span>
+                </button>
+                <div class="user-welcome">
+                    <span class="avatar sm">P</span>
+                    <div>
+                        <h3 id="patient-name">Loading...</h3>
+                        <span id="patient-id" class="badge">ID: --</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard View -->
+            <section id="dashboard-view" class="view-section active">
+                <div class="dashboard-grid">
+                    <div class="card welcome-card">
+                        <h2>Welcome back!</h2>
+                        <p>Track your health and consult with top doctors.</p>
+                        <button id="quick-consult-btn" class="btn btn-primary mt-4">Consult Doctor Now</button>
+                    </div>
+
+                    <div class="card info-summary">
+                        <h3>Vitals Overview</h3>
+                        <div class="info-grid">
+                            <div class="info-item"><label>Age</label><span id="dash-age">--</span></div>
+                            <div class="info-item"><label>Blood</label><span id="dash-blood">--</span></div>
+                            <div class="info-item"><label>Weight</label><span id="dash-weight">--</span></div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="live-grid">
-                    <!-- Video Section -->
-                    <div class="video-container card">
-                        <div class="video-placeholder">
-                            <img src="https://img.icons8.com/ios-filled/100/ffffff/video-call.png" alt="Video">
+                <div class="recent-section mt-6">
+                    <h3>Recent Consultations</h3>
+                    <div id="patient-history-list" class="history-list-compact">
+                        <!-- Loaded via JS -->
+                    </div>
+                </div>
+
+                <!-- Recent Reports On Dashboard -->
+                <div class="recent-section mt-6">
+                    <h3>Recent Reports</h3>
+                    <div id="dashboard-reports-list">
+                        <div class="card empty-state-sm">
+                            <p style="color:var(--text-muted);font-size:0.9rem;">No recent reports found.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Profile View -->
+            <section id="profile-view" class="view-section hidden">
+                <div class="card profile-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                        <h2>Edit Profile</h2>
+                    </div>
+                    <form id="profile-form">
+                        <div class="form-grid">
+                            <div class="input-group">
+                                <label>Full Name</label>
+                                <input type="text" id="p-name-input" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Age</label>
+                                <input type="number" id="p-age-input" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Gender</label>
+                                <select id="p-gender-input">
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Blood Group</label>
+                                <select id="p-blood-input">
+                                    <option value="A+">A+</option>
+                                    <option value="A-">A-</option>
+                                    <option value="B+">B+</option>
+                                    <option value="B-">B-</option>
+                                    <option value="O+">O+</option>
+                                    <option value="O-">O-</option>
+                                    <option value="AB+">AB+</option>
+                                    <option value="AB-">AB-</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Height (cm)</label>
+                                <input type="number" id="p-height-input">
+                            </div>
+                            <div class="input-group">
+                                <label>Weight (kg)</label>
+                                <input type="number" id="p-weight-input">
+                            </div>
+                            <div class="input-group full-width">
+                                <label>Address</label>
+                                <textarea id="p-address-input" rows="2"></textarea>
+                            </div>
+                            <div class="input-group full-width">
+                                <label>Medical History / Allergies</label>
+                                <textarea id="p-medical-input" rows="3"
+                                    placeholder="Diabetes, Hypertension, Penicillin allergy..."></textarea>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="save-profile-btn"
+                            style="margin-top:1rem;">Save Changes</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Medical History View -->
+            <section id="history-view" class="view-section hidden">
+                <h2>Medical History</h2>
+                <div class="card table-card mt-4">
+                    <div id="full-history-list">
+                        <!-- Full history table/list -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Reports View -->
+            <section id="reports-view" class="view-section hidden">
+                <h2>My Reports</h2>
+                <div class="card empty-state">
+                    <span class="icon-svg big"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                            fill="currentColor">
+                            <path
+                                d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z" />
+                        </svg></span>
+                    <p>No reports uploaded yet.</p>
+                    <button class="btn btn-outline mt-4">Upload Report</button>
+                </div>
+            </section>
+
+            <!-- Live Consultation View (Full Screen Overlay effect) -->
+            <div id="consultation-area" class="consultation-overlay hidden">
+                <header class="consult-header">
+                    <div class="doctor-badge">
+                        <span class="avatar sm doctor">D</span>
+                        <div class="col">
+                            <h3 id="doctor-name-display">Connecting...</h3>
+                            <span class="status-dot">Live</span>
+                        </div>
+                    </div>
+                </header>
+
+                <div class="consult-grid">
+                    <div class="video-feed card">
+                        <div class="placeholder-video">
+                            <span class="icon-svg big"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                    fill="currentColor">
+                                    <path
+                                        d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z" />
+                                </svg></span>
                             <p>Video Call Ready</p>
                         </div>
                     </div>
-
-                    <!-- Chat Section -->
                     <div class="chat-container card">
-                        <h4 style="margin-bottom:0.75rem;">Chat with Doctor</h4>
-                        <div id="chat-messages" class="chat-box"></div>
-                        <div class="chat-input-area">
+                        <div class="chat-header">Chat with Doctor</div>
+                        <div id="chat-messages" class="chat-messages"></div>
+                        <div class="chat-input">
                             <input type="text" id="chat-input" placeholder="Type a message...">
                             <button id="send-btn" class="btn btn-primary">Send</button>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Health Data Section -->
-                    <div class="health-data card">
-                        <h4 style="margin-bottom:0.75rem;">Submit Vitals</h4>
-                        <form id="health-form">
-                            <div class="vital-inputs">
-                                <div class="input-group">
-                                    <label>BP (mmHg)</label>
-                                    <input type="text" id="bp" placeholder="120/80">
-                                </div>
-                                <div class="input-group">
-                                    <label>Temp (°F)</label>
-                                    <input type="number" id="temp" step="0.1" placeholder="98.6">
-                                </div>
-                                <div class="input-group">
-                                    <label>Sugar (mg/dL)</label>
-                                    <input type="number" id="sugar" placeholder="100">
-                                </div>
-                                <div class="input-group">
-                                    <label>SpO2 (%)</label>
-                                    <input type="number" id="spo2" placeholder="98">
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn-accent" style="width:100%">Update Vitals</button>
-                        </form>
+                <div class="emergency-action mt-4" style="max-width: 800px; margin: 1rem auto;">
+                    <button onclick="flagEmergency()" class="btn btn-danger full-width">
+                        ⚠️ FLAG EMERGENCY
+                    </button>
+                </div>
+
+                <div class="mt-4" style="max-width: 800px; margin: 1rem auto;">
+                    <div id="doctor-disconnect-notice" class="disconnect-notice hidden">
+                        <span><span class="icon-svg" style="color:var(--warning);"><svg
+                                    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
+                                </svg></span> Doctor disconnected!</span>
+                        <button id="find-new-doctor-btn" class="btn btn-primary btn-sm">Find New Doctor</button>
                     </div>
                 </div>
             </div>
+
         </main>
     </div>
 
-    <script>
-        // Tab switching logic
-        function showTab(tab) {
-            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+    <!-- Consultation Request Modal -->
+    <div id="consult-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Start Consultation</h2>
+            <p>Describe your issue briefly to help the doctor.</p>
+            <textarea id="consult-symptoms" placeholder="Headache, fever for 2 days..."></textarea>
+            <div class="modal-actions">
+                <button id="cancel-consult" class="btn btn-outline">Cancel</button>
+                <button id="confirm-consult" class="btn btn-primary">Find Doctor</button>
+            </div>
+        </div>
+    </div>
 
-            if (tab === 'login') {
-                document.querySelector('.auth-tab:first-child').classList.add('active');
-                document.getElementById('login-form').classList.add('active');
-            } else {
-                document.querySelector('.auth-tab:last-child').classList.add('active');
-                document.getElementById('register-form').classList.add('active');
-            }
-        }
-    </script>
-
-    <!-- Prescription Modal -->
     <div id="prescription-modal" class="modal hidden">
         <div class="modal-content">
             <h2><span class="icon-svg icon-lg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
@@ -234,6 +358,21 @@
         </div>
     </div>
 
+    <script>
+        // Tab switching logic
+        function showTab(tab) {
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+
+            if (tab === 'login') {
+                document.querySelector('.auth-tab:first-child').classList.add('active');
+                document.getElementById('login-form').classList.add('active');
+            } else {
+                document.querySelector('.auth-tab:last-child').classList.add('active');
+                document.getElementById('register-form').classList.add('active');
+            }
+        }
+    </script>
     <script type="module" src="./scripts/patient.js"></script>
 </body>
 
