@@ -487,10 +487,20 @@ document.getElementById('close-prescription-modal')?.addEventListener('click', (
 
 // Live Vitals Handler
 const vitalsForm = document.getElementById('vitals-form');
+if (!vitalsForm) {
+    console.error('Vitals form not found!');
+} else {
+    console.log('Vitals form element found:', vitalsForm);
+}
+
 vitalsForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    console.log('Vitals form submitted');
+    console.log('Current session ID:', currentSessionId);
+
     if (!currentSessionId) {
         alert("You must be in an active session to update vitals.");
+        console.warn('No active session for vitals update');
         return;
     }
 
@@ -507,10 +517,14 @@ vitalsForm?.addEventListener('submit', async (e) => {
         updatedAt: Date.now()
     };
 
+    console.log('Updating vitals:', vitals);
+
     try {
         await update(ref(db, `sessions/${currentSessionId}/healthData`), vitals);
+        console.log('Vitals updated successfully');
         alert('Vitals updated! Doctor can see this immediately.');
     } catch (err) {
+        console.error('Vitals update error:', err);
         alert('Failed to update: ' + err.message);
     } finally {
         btn.disabled = false;

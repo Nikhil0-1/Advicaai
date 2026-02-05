@@ -57,12 +57,15 @@ document.querySelectorAll('.nav-item[data-section]').forEach(btn => {
 });
 
 function switchView(viewName) {
+    console.log('Switching to view:', viewName);
+
     // Hide active consultation if viewing other sections
     if (viewName !== 'dashboard') {
         const activeConsultation = document.getElementById('active-consultation');
         if (activeConsultation && !activeConsultation.classList.contains('hidden')) {
             // Don't allow switching away if in active consultation
             alert('Please end the current consultation before navigating away.');
+            console.warn('Prevented navigation - active consultation');
             return;
         }
     }
@@ -70,14 +73,26 @@ function switchView(viewName) {
     // Update active nav item
     document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
     const activeBtn = document.querySelector(`.nav-item[data-section="${viewName}"]`);
-    if (activeBtn) activeBtn.classList.add('active');
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+        console.log('Activated nav button:', viewName);
+    } else {
+        console.error('Nav button not found for:', viewName);
+    }
 
     // Show selected view, hide others
-    Object.values(views).forEach(el => el && el.classList.add('hidden'));
-    if (views[viewName]) {
-        views[viewName].classList.remove('hidden');
-        views[viewName].classList.add('active');
-    }
+    Object.entries(views).forEach(([key, el]) => {
+        if (el) {
+            el.classList.add('hidden');
+            if (key === viewName) {
+                el.classList.remove('hidden');
+                el.classList.add('active');
+                console.log('Displaying view:', viewName);
+            }
+        } else {
+            console.warn('View element not found:', key);
+        }
+    });
 }
 
 // Sidebar Toggle (Mobile)
