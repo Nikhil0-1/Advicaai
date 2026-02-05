@@ -390,63 +390,64 @@ confirmEndBtn?.addEventListener('click', async () => {
         return;
     }
 
+    if (!currentDoctor?.uid) {
+        alert('Doctor information not found. Please refresh and try again.');
+        return;
+    }
+
     const btn = confirmEndBtn;
     const originalText = btn.innerText;
+
+    console.log('=== Starting End Session ===');
+    console.log('Session:', currentSessionId);
+    console.log('Doctor:', currentDoctor.uid);
 
     try {
         btn.disabled = true;
         btn.innerText = 'Saving...';
 
-        // 1. Save prescription to session
+        console.log('Step 1: Saving prescription to session...');
         await update(ref(db, `sessions/${currentSessionId}`), {
             prescription: prescriptionText,
             endTime: Date.now(),
             status: 'COMPLETED'
         });
+        console.log('✓ Prescription saved');
 
-        // 2. Try to save to storage (optional)
-        try {
-            const pRef = sRef(storage, `prescriptions/${currentSessionId}.txt`);
-            await uploadString(pRef, prescriptionText);
+        console.log('Step 2: Freeing doctor...');
+        await update(ref(db, `users/doctors/${currentDoctor.uid}`), {
+            busy: false,
+            activeSessionId: null
+        });
+        console.log('✓ Doctor freed');
 
-            await update(ref(db, `sessions/${currentSessionId}`), {
-                prescriptionLink: `prescriptions/${currentSessionId}.txt`
-            });
-        } catch (storageError) {
-            console.warn('Storage upload failed (non-critical):', storageError);
-        }
-
-        // 3. Free the doctor
-        if (currentDoctor?.uid) {
-            await update(ref(db, `users/doctors/${currentDoctor.uid}`), {
-                busy: false,
-                activeSessionId: null
-            });
-        }
-
-        // 4. Hide modal
-        if (prescriptionModal) prescriptionModal.classList.add('hidden');
-
-        // 5. Clear prescription text
+        console.log('Step 3: Cleaning UI...');
         const textArea = document.getElementById('prescription-text');
         if (textArea) textArea.value = '';
 
-        // Reset button before alert
+        if (prescriptionModal) prescriptionModal.classList.add('hidden');
+
+        // Reset button BEFORE alert
         btn.disabled = false;
         btn.innerText = originalText;
+        console.log('✓ UI cleaned');
 
-        alert('Consultation completed successfully. Prescription sent to patient.');
+        console.log('=== Session End Complete ===');
+        alert('Consultation completed successfully! Prescription sent to patient.');
 
-        // UI will update automatically via listener
         currentSessionId = null;
+        currentPatientId = null;
 
     } catch (error) {
-        console.error('End session error:', error);
-        alert('Error ending session: ' + error.message);
+        console.error('!!! Session End Error !!!');
+        console.error('Error:', error);
+        console.error('Message:', error.message);
+        console.error('Code:', error.code);
 
-        // Always reset button state on error
         btn.disabled = false;
         btn.innerText = originalText;
+
+        alert(`Error: ${error.message}\n\nPlease try again or refresh the page.`);
     }
 });
 
