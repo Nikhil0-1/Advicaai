@@ -135,17 +135,19 @@
 
         <main class="main-content">
             <header class="top-header">
-                <button id="menu-toggle" class="btn-icon mobile-only">
-                    <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                            fill="currentColor">
-                            <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
-                        </svg></span>
-                </button>
-                <div class="user-welcome">
-                    <span class="avatar sm">P</span>
-                    <div>
-                        <h3 id="patient-name">Loading...</h3>
-                        <span id="patient-id" class="badge">ID: --</span>
+                <div class="header-left">
+                    <button id="menu-toggle" class="btn-icon mobile-only">
+                        <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                fill="currentColor">
+                                <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+                            </svg></span>
+                    </button>
+                    <div class="user-welcome">
+                        <span class="avatar sm">P</span>
+                        <div>
+                            <h3 id="patient-name">Loading...</h3>
+                            <span id="patient-id" class="badge">ID: --</span>
+                        </div>
                     </div>
                 </div>
             </header>
@@ -261,14 +263,28 @@
             <!-- Reports View -->
             <section id="reports-view" class="view-section hidden">
                 <h2>My Reports</h2>
-                <div class="card empty-state">
-                    <span class="icon-svg big"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                            fill="currentColor">
-                            <path
-                                d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z" />
-                        </svg></span>
-                    <p>No reports uploaded yet.</p>
-                    <button class="btn btn-outline mt-4">Upload Report</button>
+                <div class="card" style="margin-top:1rem;">
+                    <h3>Upload Medical Report</h3>
+                    <form id="upload-report-form" style="margin-top:1rem;">
+                        <div class="input-group">
+                            <label>Report Description</label>
+                            <input type="text" id="report-desc" placeholder="E.g., Blood Test Report - Jan 2026"
+                                required>
+                        </div>
+                        <div class="input-group">
+                            <label>Select File (PDF, JPG, PNG - Max 5MB)</label>
+                            <input type="file" id="report-file" accept=".pdf,.jpg,.jpeg,.png" required
+                                style="padding:0.5rem; border:2px solid #e2e8f0; border-radius:10px; width:100%;">
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="margin-top:1rem;">Upload Report</button>
+                    </form>
+                </div>
+
+                <div class="card" style="margin-top:1.5rem;">
+                    <h3>Uploaded Reports</h3>
+                    <div id="reports-list-container" style="margin-top:1rem;">
+                        <p class="text-muted">No reports uploaded yet.</p>
+                    </div>
                 </div>
             </section>
 
@@ -292,31 +308,6 @@
 
                 <!-- Content Container - Same Structure as Dashboard -->
                 <div class="consultation-content">
-
-                    <!-- Video Consultation Card -->
-                    <div class="card video-consultation-card">
-                        <h3>Video Consultation</h3>
-                        <div class="video-feed">
-                            <div class="placeholder-video">
-                                <span class="icon-svg big"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                                        fill="currentColor">
-                                        <path
-                                            d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z" />
-                                    </svg></span>
-                                <p>Video Call Ready</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Chat Card -->
-                    <div class="card chat-consultation-card">
-                        <div class="chat-header">Chat with Doctor</div>
-                        <div id="chat-messages" class="chat-messages"></div>
-                        <div class="chat-input">
-                            <input type="text" id="chat-input" placeholder="Type a message...">
-                            <button id="send-btn" class="btn btn-primary">Send</button>
-                        </div>
-                    </div>
 
                     <!-- Live Vitals Card -->
                     <div class="card vitals-consultation-card">
@@ -344,11 +335,36 @@
                             Vitals</button>
                     </div>
 
+                    <!-- Chat Card -->
+                    <div class="card chat-consultation-card">
+                        <div class="chat-header">Chat with Doctor</div>
+                        <div id="chat-messages" class="chat-messages"></div>
+                        <div class="chat-input">
+                            <input type="text" id="chat-input" placeholder="Type a message...">
+                            <button id="send-btn" class="btn btn-primary">Send</button>
+                        </div>
+                    </div>
+
                     <!-- Emergency Card -->
                     <div class="card emergency-consultation-card">
                         <button onclick="flagEmergency()" class="btn btn-danger full-width">
                             ⚠️ FLAG EMERGENCY
                         </button>
+                    </div>
+
+                    <!-- Video Consultation Card - Now at Bottom -->
+                    <div class="card video-consultation-card">
+                        <h3>Video Consultation</h3>
+                        <div class="video-feed">
+                            <div class="placeholder-video">
+                                <span class="icon-svg big"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                        fill="currentColor">
+                                        <path
+                                            d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z" />
+                                    </svg></span>
+                                <p>Video Call Ready</p>
+                            </div>
+                        </div>
                     </div>
 
                 </div>

@@ -1,9 +1,12 @@
 // Patient Panel - Logic for Sidebar, Profile, Consultation
-import { db, auth } from './firebase.js';
+import { db, auth, storage } from './firebase.js';
 import { checkAuth, login, logout, registerPatient } from './auth.js';
 import {
     ref, set, onValue, update, get, push, remove
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import {
+    ref as sRef, uploadBytes, getDownloadURL, deleteObject
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 // Initialize Auth Check
 checkAuth('patient');
@@ -72,11 +75,25 @@ function switchView(viewName) {
 
 // Sidebar Toggle (Mobile)
 menuToggleBtn?.addEventListener('click', () => {
-    sidebar.classList.add('open');
+    sidebar?.classList.add('open');
+    document.body.style.overflow = 'hidden'; // Prevent background scroll
 });
 
 closeSidebarBtn?.addEventListener('click', () => {
-    sidebar.classList.remove('open');
+    sidebar?.classList.remove('open');
+    document.body.style.overflow = ''; // Restore scroll
+});
+
+// Close sidebar when clicking outside on mobile
+document.addEventListener('click', (e) => {
+    if (window.innerWidth <= 768) {
+        if (sidebar?.classList.contains('open') &&
+            !sidebar.contains(e.target) &&
+            !menuToggleBtn?.contains(e.target)) {
+            sidebar.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+    }
 });
 
 // Logout
@@ -144,7 +161,8 @@ window.addEventListener('auth-success', async (e) => {
     // Initial Load
     await Promise.all([
         loadProfile(),
-        loadPatientHistory(currentPatient.uid)
+        loadPatientHistory(currentPatient.uid),
+        loadPatientReports()
     ]);
 });
 
@@ -513,3 +531,136 @@ window.flagEmergency = async () => {
     await update(ref(db, `sessions/${currentSessionId}`), { emergency: true });
     alert('Emergency Flagged!');
 };
+
+// ==========================================
+// REPORT UPLOAD AND MANAGEMENT
+// ==========================================
+
+async function loadPatientReports() {
+    if (!currentPatient) return;
+
+    onValue(ref(db, `users/patients/${currentPatient.uid}/reports`), (snap) => {
+        const reports = snap.val() || {};
+        renderReportsList(reports);
+    });
+}
+
+function renderReportsList(reports) {
+    const container = document.getElementById('reports-list-container');
+    if (!container) return;
+
+    const reportsArray = Object.entries(reports);
+
+    if (reportsArray.length === 0) {
+        container.innerHTML = '<p class="text-muted">No reports uploaded yet.</p>';
+        return;
+    }
+
+    container.innerHTML = reportsArray.map(([id, report]) => `
+        <div class="report-item" style="display:flex; justify-content:space-between; align-items:center; padding:1rem; border:1px solid #e2e8f0; border-radius:10px; margin-bottom:0.75rem;">
+            <div>
+                <strong>${report.description || 'Report'}</strong>
+                <p style="font-size:0.85rem; color:#64748b; margin:0.25rem 0 0 0;">
+                    ${new Date(report.uploadedAt).toLocaleDateString()} | ${report.fileName}
+                </p>
+            </div>
+            <div>
+                <button class="btn btn-sm btn-outline" onclick="viewReport('${report.downloadURL}')" style="margin-right:0.5rem;">View</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteReport('${id}')">Delete</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+window.viewReport = (url) => {
+    window.open(url, '_blank');
+};
+
+window.deleteReport = async (reportId) => {
+    if (!confirm('Are you sure you want to delete this report?')) return;
+
+    try {
+        const reportRef = ref(db, `users/patients/${currentPatient.uid}/reports/${reportId}`);
+        const reportSnap = await get(reportRef);
+        const report = reportSnap.val();
+
+        // Delete from storage
+        if (report?.storagePath) {
+            try {
+                await deleteObject(sRef(storage, report.storagePath));
+            } catch (e) {
+                console.warn('Storage delete failed:', e);
+            }
+        }
+
+        // Delete from database
+        await remove(reportRef);
+        alert('Report deleted successfully!');
+    } catch (error) {
+        console.error('Delete error:', error);
+        alert('Failed to delete report: ' + error.message);
+    }
+};
+
+// Upload Report Form
+const uploadReportForm = document.getElementById('upload-report-form');
+uploadReportForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const descInput = document.getElementById('report-desc');
+    const fileInput = document.getElementById('report-file');
+    const btn = uploadReportForm.querySelector('button[type="submit"]');
+    const originalText = btn.innerText;
+
+    const description = descInput.value.trim();
+    const file = fileInput.files[0];
+
+    if (!file) {
+        alert('Please select a file');
+        return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        alert('File size must be less than 5MB');
+        return;
+    }
+
+    try {
+        btn.disabled = true;
+        btn.innerText = 'Uploading...';
+
+        // Upload to Firebase Storage
+        const timestamp = Date.now();
+        const storagePath = `patient-reports/${currentPatient.uid}/${timestamp}_${file.name}`;
+        const storageReference = sRef(storage, storagePath);
+
+        await uploadBytes(storageReference, file);
+        const downloadURL = await getDownloadURL(storageReference);
+
+        // Save metadata to database
+        const reportData = {
+            description,
+            fileName: file.name,
+            fileType: file.type,
+            fileSize: file.size,
+            downloadURL,
+            storagePath,
+            uploadedAt: timestamp,
+            patientId: currentPatient.uid
+        };
+
+        await push(ref(db, `users/patients/${currentPatient.uid}/reports`), reportData);
+
+        alert('Report uploaded successfully!');
+        descInput.value = '';
+        fileInput.value = '';
+
+    } catch (error) {
+        console.error('Upload error:', error);
+        alert('Failed to upload report: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerText = originalText;
+    }
+});

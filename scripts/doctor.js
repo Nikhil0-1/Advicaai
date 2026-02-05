@@ -17,6 +17,15 @@ let currentSessionId = null;
 let heartbeatInterval = null;
 let sessionListener = null;
 let chatListener = null;
+let currentPatientId = null;
+
+// Views
+const views = {
+    dashboard: document.getElementById('dashboard-view'),
+    profile: document.getElementById('profile-view'),
+    history: document.getElementById('history-view'),
+    patients: document.getElementById('patients-view')
+};
 
 // DOM Elements
 const loginForm = document.getElementById('login-form');
@@ -30,6 +39,69 @@ const sendBtn = document.getElementById('send-btn');
 const endSessionBtn = document.getElementById('end-session-btn');
 const prescriptionModal = document.getElementById('prescription-modal');
 const confirmEndBtn = document.getElementById('confirm-end-btn');
+const sidebar = document.getElementById('sidebar');
+const closeSidebarBtn = document.getElementById('close-sidebar');
+const menuToggleBtn = document.getElementById('menu-toggle');
+
+// Navigation Handler
+document.querySelectorAll('.nav-item[data-section]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        const section = btn.dataset.section;
+        switchView(section);
+
+        // Close sidebar on mobile
+        if (window.innerWidth <= 768) {
+            sidebar?.classList.remove('open');
+        }
+    });
+});
+
+function switchView(viewName) {
+    // Hide active consultation if viewing other sections
+    if (viewName !== 'dashboard') {
+        const activeConsultation = document.getElementById('active-consultation');
+        if (activeConsultation && !activeConsultation.classList.contains('hidden')) {
+            // Don't allow switching away if in active consultation
+            alert('Please end the current consultation before navigating away.');
+            return;
+        }
+    }
+
+    // Update active nav item
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    const activeBtn = document.querySelector(`.nav-item[data-section="${viewName}"]`);
+    if (activeBtn) activeBtn.classList.add('active');
+
+    // Show selected view, hide others
+    Object.values(views).forEach(el => el && el.classList.add('hidden'));
+    if (views[viewName]) {
+        views[viewName].classList.remove('hidden');
+        views[viewName].classList.add('active');
+    }
+}
+
+// Sidebar Toggle (Mobile)
+menuToggleBtn?.addEventListener('click', () => {
+    sidebar?.classList.add('open');
+    document.body.style.overflow = 'hidden'; // Prevent background scroll
+});
+
+closeSidebarBtn?.addEventListener('click', () => {
+    sidebar?.classList.remove('open');
+    document.body.style.overflow = ''; // Restore scroll
+});
+
+// Close sidebar when clicking outside on mobile
+document.addEventListener('click', (e) => {
+    if (window.innerWidth <= 768) {
+        if (sidebar?.classList.contains('open') &&
+            !sidebar.contains(e.target) &&
+            !menuToggleBtn?.contains(e.target)) {
+            sidebar.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+    }
+});
 
 // Login Handler
 loginForm?.addEventListener('submit', async (e) => {
@@ -172,7 +244,11 @@ async function monitorSessions(uid) {
 function showConsultation(sid) {
     console.log('Showing consultation:', sid);
 
-    if (noPatientView) noPatientView.classList.add('hidden');
+    // Switch to dashboard view
+    switchView('dashboard');
+
+    const dashboard = document.getElementById('dashboard-view');
+    if (dashboard) dashboard.classList.add('hidden');
     if (activeConsultation) activeConsultation.classList.remove('hidden');
 
     // Clear previous listeners
@@ -184,6 +260,9 @@ function showConsultation(sid) {
     onValue(sessionRef, (snap) => {
         const session = snap.val();
         if (!session) return;
+
+        // Store patient ID for reports
+        currentPatientId = session.patientId;
 
         // Update patient info
         const nameEl = document.getElementById('p-name');
@@ -210,6 +289,9 @@ function showConsultation(sid) {
                     if (bloodEl) bloodEl.innerText = patient.bloodGroup || '--';
                 }
             });
+
+            // Load patient reports
+            loadPatientReportsForDoctor(session.patientId);
         }
 
         // Load health data
@@ -249,10 +331,12 @@ function showConsultation(sid) {
 // Hide Consultation UI
 function hideConsultation() {
     if (activeConsultation) activeConsultation.classList.add('hidden');
-    if (noPatientView) noPatientView.classList.remove('hidden');
+    const dashboard = document.getElementById('dashboard-view');
+    if (dashboard) dashboard.classList.remove('hidden');
 
     // Clear chat
     if (chatMessages) chatMessages.innerHTML = '';
+    currentPatientId = null;
 }
 
 // Send Chat Message
@@ -333,10 +417,12 @@ confirmEndBtn?.addEventListener('click', async () => {
         }
 
         // 3. Free the doctor
-        await update(ref(db, `users/doctors/${currentDoctor.uid}`), {
-            busy: false,
-            activeSessionId: null
-        });
+        if (currentDoctor?.uid) {
+            await update(ref(db, `users/doctors/${currentDoctor.uid}`), {
+                busy: false,
+                activeSessionId: null
+            });
+        }
 
         // 4. Hide modal
         if (prescriptionModal) prescriptionModal.classList.add('hidden');
@@ -344,6 +430,10 @@ confirmEndBtn?.addEventListener('click', async () => {
         // 5. Clear prescription text
         const textArea = document.getElementById('prescription-text');
         if (textArea) textArea.value = '';
+
+        // Reset button before alert
+        btn.disabled = false;
+        btn.innerText = originalText;
 
         alert('Consultation completed successfully. Prescription sent to patient.');
 
@@ -353,8 +443,8 @@ confirmEndBtn?.addEventListener('click', async () => {
     } catch (error) {
         console.error('End session error:', error);
         alert('Error ending session: ' + error.message);
-    } finally {
-        // Always reset button state
+
+        // Always reset button state on error
         btn.disabled = false;
         btn.innerText = originalText;
     }
@@ -475,5 +565,78 @@ window.addEventListener('auth-success', async (e) => {
     // Start heartbeat and session monitoring
     startHeartbeat(currentDoctor.uid);
     monitorSessions(currentDoctor.uid);
+
+    // Load profile info
+    loadDoctorProfile();
 });
+
+// Load Doctor Profile
+function loadDoctorProfile() {
+    if (!currentDoctor || !currentDoctorData) return;
+
+    const nameSpan = document.getElementById('doc-profile-name');
+    const emailSpan = document.getElementById('doc-profile-email');
+    const statusSpan = document.getElementById('doc-profile-status');
+
+    if (nameSpan) nameSpan.innerText = currentDoctorData.name || currentDoctor.displayName || 'Doctor';
+    if (emailSpan) emailSpan.innerText = currentDoctor.email;
+    if (statusSpan) statusSpan.innerText = currentDoctorData.approved ? 'Approved' : 'Pending Approval';
+}
+
+// Load Patient Reports for Doctor
+async function loadPatientReportsForDoctor(patientId) {
+    const reportsList = document.getElementById('patient-reports-list');
+    if (!reportsList) return;
+
+    try {
+        const reportsSnap = await get(ref(db, `users/patients/${patientId}/reports`));
+        const reports = reportsSnap.val() || {};
+        const reportsArray = Object.entries(reports);
+
+        if (reportsArray.length === 0) {
+            reportsList.innerHTML = '<p class="text-muted" style="font-size:0.9rem;">No reports uploaded</p>';
+            return;
+        }
+
+        reportsList.innerHTML = reportsArray.map(([id, report]) => `
+            <div class="report-item" style="display:flex; justify-content:space-between; align-items:center; padding:0.75rem; border:1px solid #e2e8f0; border-radius:8px; margin-bottom:0.5rem; background:#f8fafc;">
+                <div style="flex:1;">
+                    <strong style="font-size:0.9rem;">${report.description || 'Report'}</strong>
+                    <p style="font-size:0.75rem; color:#64748b; margin:0.25rem 0 0 0;">
+                        ${new Date(report.uploadedAt).toLocaleDateString()}
+                    </p>
+                </div>
+                <button class="btn btn-sm btn-primary" onclick="window.open('${report.downloadURL}', '_blank')" style="padding:0.4rem 0.8rem; font-size:0.85rem;">
+                    View
+                </button>
+            </div>
+        `).join('');
+
+        // Also listen for new reports
+        onValue(ref(db, `users/patients/${patientId}/reports`), (snap) => {
+            const updatedReports = snap.val() || {};
+            const updatedArray = Object.entries(updatedReports);
+
+            if (updatedArray.length === reportsArray.length) return; // No change
+
+            reportsList.innerHTML = updatedArray.map(([id, report]) => `
+                <div class="report-item" style="display:flex; justify-content:space-between; align-items:center; padding:0.75rem; border:1px solid #e2e8f0; border-radius:8px; margin-bottom:0.5rem; background:#f8fafc;">
+                    <div style="flex:1;">
+                        <strong style="font-size:0.9rem;">${report.description || 'Report'}</strong>
+                        <p style="font-size:0.75rem; color:#64748b; margin:0.25rem 0 0 0;">
+                            ${new Date(report.uploadedAt).toLocaleDateString()}
+                        </p>
+                    </div>
+                    <button class="btn btn-sm btn-primary" onclick="window.open('${report.downloadURL}', '_blank')" style="padding:0.4rem 0.8rem; font-size:0.85rem;">
+                        View
+                    </button>
+                </div>
+            `).join('');
+        });
+
+    } catch (error) {
+        console.error('Error loading reports:', error);
+        reportsList.innerHTML = '<p class="text-muted" style="font-size:0.9rem; color:#ef4444;">Failed to load reports</p>';
+    }
+}
 
