@@ -504,7 +504,7 @@ vitalsForm?.addEventListener('submit', async (e) => {
         return;
     }
 
-    const btn = vitalsForm.querySelector('button[type="submit"]');
+    const btn = document.querySelector('button[form="vitals-form"]');
     const originalText = btn.innerText;
     btn.disabled = true;
     btn.innerText = 'Updating...';

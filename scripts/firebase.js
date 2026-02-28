@@ -4,7 +4,7 @@ import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth
 import { getDatabase } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-// ADVICA Firebase Configuration
+// MediSync Firebase Configuration
 const firebaseConfig = {
     apiKey: "AIzaSyDrji6mioMGQ3X6Z3374y-160oIFHC0_Gc",
     authDomain: "advicaai-a57ee.firebaseapp.com",
