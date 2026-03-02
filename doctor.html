@@ -239,11 +239,12 @@
                     </div>
 
                     <div class="main-consultation-area">
-                        <div class="video-section card">
-                            <div class="video-placeholder">
-                                <img src="https://img.icons8.com/ios-filled/100/ffffff/video-call.png" alt="Video">
-                                <p>Patient Video Feed</p>
-                            </div>
+                        <div class="video-section card"
+                            style="position: relative; overflow: hidden; height: 350px; padding: 0; background: #000;">
+                            <video id="remote-video" autoplay playsinline
+                                style="width: 100%; height: 100%; object-fit: cover;"></video>
+                            <video id="local-video" autoplay playsinline muted
+                                style="width: 120px; height: 160px; position: absolute; bottom: 15px; right: 15px; border-radius: 8px; border: 2px solid white; object-fit: cover; z-index: 10;"></video>
                         </div>
 
                         <div class="chat-section card">
@@ -280,6 +281,8 @@
         </div>
     </div>
 
+    <!-- Initialize script references -->
+    <script type="module" src="./scripts/webrtc.js"></script>
     <script type="module" src="./scripts/doctor.js"></script>
 </body>
 

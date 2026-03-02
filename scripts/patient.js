@@ -7,6 +7,7 @@ import {
 import {
     ref as sRef, uploadBytes, getDownloadURL, deleteObject
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+import { initWebRTC, stopCamera } from './webrtc.js';
 
 // Initialize Auth Check
 checkAuth('patient');
@@ -343,6 +344,11 @@ function showConsultation(docName) {
     if (overlay) overlay.classList.remove('hidden'); // Show overlay
     if (doctorNameDisplay) doctorNameDisplay.innerText = `Dr. ${docName}`;
 
+    // Start WebRTC for Patient (Callee)
+    const localVideo = document.getElementById('local-video');
+    const remoteVideo = document.getElementById('remote-video');
+    initWebRTC(currentSessionId, 'patient', localVideo, remoteVideo);
+
     // Initialize Chat Listener
     onValue(ref(db, `sessions/${currentSessionId}/chat`), (snap) => {
         if (!chatMessages) return;
@@ -363,6 +369,7 @@ function showConsultation(docName) {
         const session = snap.val();
         if (session && session.endTime) {
             stopFailSafeWatcher();
+            stopCamera(); // Stop media tracks
             alert('Consultation ended. Prescription received.');
             window.location.reload(); // Refresh to go back to dashboard
         }
@@ -388,6 +395,36 @@ async function loadPatientHistory(patientId) {
 
         if (activeEntry) {
             const [sid, session] = activeEntry;
+
+            // Validate if doctor is still actually assigned and online
+            const docSnap = await get(ref(db, `users/doctors/${session.doctorId}`));
+            const docData = docSnap.val();
+
+            const isDoctorValid = docData
+                && docData.status === 'ACTIVE'
+                && docData.activeSessionId === sid
+                && (Date.now() - (docData.lastActiveTime || 0)) < 30000;
+
+            if (!isDoctorValid) {
+                console.warn('Stale session detected. Doctor is no longer online or assigned to this session. Auto-clearing...');
+                // Auto complete the stale session
+                await update(ref(db, `sessions/${sid}`), {
+                    endTime: Date.now(),
+                    status: 'COMPLETED',
+                    prescription: 'Consultation canceled due to connectivity loss.'
+                });
+                // Free doctor if they exist but crashed
+                if (docData && docData.activeSessionId === sid) {
+                    await update(ref(db, `users/doctors/${session.doctorId}`), {
+                        busy: false,
+                        activeSessionId: null
+                    });
+                }
+                alert('Your previous session was disconnected. Please start a new consultation.');
+                window.location.reload();
+                return;
+            }
+
             console.log('Found active session:', sid);
             currentSessionId = sid;
             assignedDoctorId = session.doctorId;

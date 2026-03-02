@@ -7,6 +7,7 @@ import {
 import {
     uploadString, ref as sRef, getDownloadURL
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+import { initWebRTC, stopCamera } from './webrtc.js';
 
 // Initialize Auth Check
 checkAuth('doctor');
@@ -270,6 +271,11 @@ function showConsultation(sid) {
     if (sessionListener) off(sessionListener);
     if (chatListener) off(chatListener);
 
+    // Start WebRTC for Doctor (Caller)
+    const localVideo = document.getElementById('local-video');
+    const remoteVideo = document.getElementById('remote-video');
+    initWebRTC(sid, 'doctor', localVideo, remoteVideo);
+
     // Load Session Data
     const sessionRef = ref(db, `sessions/${sid}`);
     onValue(sessionRef, (snap) => {
@@ -348,6 +354,9 @@ function hideConsultation() {
     if (activeConsultation) activeConsultation.classList.add('hidden');
     const dashboard = document.getElementById('dashboard-view');
     if (dashboard) dashboard.classList.remove('hidden');
+
+    // Stop WebRTC Camera
+    stopCamera();
 
     // Clear chat
     if (chatMessages) chatMessages.innerHTML = '';
